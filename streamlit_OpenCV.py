@@ -9,6 +9,7 @@ import io
 import math
 import types
 import time
+import base64
 from time import sleep
 import _pickle as pickle
 from scipy.special import softmax
@@ -2049,6 +2050,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
