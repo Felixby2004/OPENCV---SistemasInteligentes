@@ -929,7 +929,7 @@ def capitulo6():
             return img_orig, "Rectángulo inválido o demasiado pequeño."
             
         # Número de seams a remover es el ancho del ROI más un margen
-        num_seams = min(w, img.shape[1] // 8)
+        num_seams = min(30, w)
         
         # 1. REMOVER SEAMS (Encogimiento de la imagen)
         for i in range(num_seams): 
@@ -2149,6 +2149,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
