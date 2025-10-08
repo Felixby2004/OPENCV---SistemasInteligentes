@@ -1252,112 +1252,84 @@ def capitulo7():
 
 
 def capitulo8():
-    st.markdown(
-        """
-        <div class="chapter-box">
-            <div class="chapter-title">Capítulo 8 - Seguimiento de objetos</div>
-            <p>
-                Este módulo aplica detección de movimiento simulando una grabación con cámara o cargando un video.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.title("🎥 Captura automática de video y procesamiento de movimiento")
+    if "grabando" not in st.session_state:
+        st.session_state.grabando = False
+    if "frames" not in st.session_state:
+        st.session_state.frames = []
+    
+    # Botones de control
+    col1, col2 = st.columns(2)
+    with col1:
+        iniciar = st.button("▶️ Iniciar grabación")
+    with col2:
+        detener = st.button("⏹️ Detener y procesar")
+    
+    # Iniciar grabación
+    if iniciar:
+        st.session_state.grabando = True
+        st.session_state.frames = []
+        st.info("Grabando... mantén la cámara abierta.")
+    
+    # Capturar frames automáticamente
+    FRAME_WINDOW = st.image([])
+    cap = cv2.VideoCapture(0)
+    
+    while st.session_state.grabando:
+        ret, frame = cap.read()
+        if not ret:
+            st.warning("No se pudo acceder a la cámara.")
+            break
+    
+        # Mostrar frame en tiempo real
+        FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    
+        # Guardar el frame en memoria
+        st.session_state.frames.append(frame)
+    
+        # Salir si el usuario presiona el botón Detener
+        if detener:
+            st.session_state.grabando = False
+            break
+    
+    cap.release()
+    
+    # Procesar video cuando se detiene
+    if detener and len(st.session_state.frames) > 5:
+        st.info("Procesando video...")
+    
+        processed_frames = []
+        prev_frame = None
+    
+        for frame in st.session_state.frames:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if prev_frame is None:
+                prev_frame = gray
+                continue
+    
+            diff = cv2.absdiff(prev_frame, gray)
+            _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+            processed_frames.append(cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR))
+            prev_frame = gray
+    
+        # Guardar video procesado
+        temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        height, width, _ = st.session_state.frames[0].shape
+        out = cv2.VideoWriter(temp_video.name, cv2.VideoWriter_fourcc(*'mp4v'), 10, (width, height))
+    
+        for f in processed_frames:
+            out.write(f)
+        out.release()
+    
+        st.success("✅ Video procesado correctamente")
+        st.video(temp_video.name)
+        os.unlink(temp_video.name)
+    
+    elif detener and len(st.session_state.frames) <= 5:
+        st.error("No se capturaron suficientes frames.")
 
-    opcion = st.radio("Selecciona una opción:", ["📷 Grabar con Cámara", "📹 Subir Video"])
 
-    def frame_diff(prev_frame, cur_frame, next_frame):
-        diff_frames1 = cv2.absdiff(next_frame, cur_frame)
-        diff_frames2 = cv2.absdiff(cur_frame, prev_frame)
-        return cv2.bitwise_and(diff_frames1, diff_frames2)
 
-    def procesar_frames(frames, scaling_factor):
-        if len(frames) < 3:
-            st.warning("No se capturaron suficientes frames para analizar el movimiento.")
-            return
-
-        FRAME_WINDOW_CUR = st.empty()
-        FRAME_WINDOW_DIFF = st.empty()
-
-        prev_frame = cv2.cvtColor(frames[0], cv2.COLOR_BGR2GRAY)
-        cur_frame = cv2.cvtColor(frames[1], cv2.COLOR_BGR2GRAY)
-
-        for i in range(2, len(frames)):
-            next_frame = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
-            diff_img = frame_diff(prev_frame, cur_frame, next_frame)
-            _, diff_img_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
-
-            FRAME_WINDOW_CUR.image(cur_frame, channels="GRAY", caption=f"Frame {i}")
-            FRAME_WINDOW_DIFF.image(diff_img_thresh, channels="GRAY", caption="Movimiento Detectado")
-
-            prev_frame, cur_frame = cur_frame, next_frame
-            time.sleep(0.2)
-
-        st.success("✅ Procesamiento finalizado correctamente.")
-
-    scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
-
-    # --- Subida de video existente ---
-    if opcion == "📹 Subir Video":
-        uploaded_file = st.file_uploader("Sube un video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
-        if uploaded_file is not None:
-            try:
-                tfile = tempfile.NamedTemporaryFile(delete=False)
-                tfile.write(uploaded_file.read())
-                tfile.close()
-
-                cap = cv2.VideoCapture(tfile.name)
-                frames = []
-
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        break
-                    frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-                    frames.append(frame)
-
-                cap.release()
-                procesar_frames(frames, scaling_factor)
-
-            except Exception as e:
-                st.error(f"Ocurrió un error procesando el video: {e}")
-            finally:
-                os.unlink(tfile.name)
-
-    # --- Grabación automática desde la cámara ---
-    else:
-        if "recording" not in st.session_state:
-            st.session_state.recording = False
-            st.session_state.frames = []
-
-        FRAME_WINDOW = st.empty()
-
-        if not st.session_state.recording:
-            if st.button("▶️ Iniciar Grabación"):
-                st.session_state.recording = True
-                st.session_state.frames = []
-                st.rerun()
-        else:
-            img_file = st.camera_input("Grabando... (se capturan frames automáticamente)")
-            FRAME_WINDOW.info("📸 Grabando frames... Presiona 'Detener y Procesar' cuando termines.")
-
-            if img_file is not None:
-                try:
-                    frame = np.array(Image.open(img_file))
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                    frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-                    st.session_state.frames.append(frame)
-                    st.success(f"Frame {len(st.session_state.frames)} capturado automáticamente.")
-                except Exception:
-                    st.warning("No se pudo procesar este frame.")
-
-            if st.button("⏹️ Detener y Procesar"):
-                st.session_state.recording = False
-                if len(st.session_state.frames) >= 3:
-                    procesar_frames(st.session_state.frames, scaling_factor)
-                else:
-                    st.warning("No se capturaron suficientes frames.")
-                st.session_state.frames = []
 
 
 def capitulo9():
@@ -2062,6 +2034,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
