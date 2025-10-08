@@ -9,7 +9,6 @@ import io
 import math
 import types
 import time
-import base64
 from time import sleep
 import _pickle as pickle
 from scipy.special import softmax
@@ -1253,118 +1252,73 @@ def capitulo7():
 
 
 def capitulo8():
-    st.title("🎥 Detección de Movimiento Automática (Streamlit Cloud Compatible)")
+    st.markdown(
+        """
+        <div class="chapter-box">
+            <div class="chapter-title">Capítulo 8 - Seguimiento de objetos</div>
+            <p>
+                También llamado (Object Tracking), es un proceso crucial en la visión por computadora que se centra en localizar la posición de un objeto de interés en una secuencia de video a lo largo del tiempo, manteniendo su identidad a medida que se mueve o cambia.<br>
+                Aquí estamos aplicando la detección de movimiento con un filtro de grises.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.markdown("""
-    Graba video automáticamente usando la cámara del navegador.  
-    Cuando termines, presiona **Detener grabación** para procesar el movimiento detectado.
-    """)
+    with st.expander("Objetivo Principal"):
+        st.markdown(
+            """
+            <p>Mantener la identidad del objeto a través de múltiples fotogramas (frames) de video.</p>
+            <ul>
+                <li>
+                    <strong>Propósito</strong>: Simplificar la imagen para que solo se quede con el objeto de interés, separándolo del fondo y de otros elementos.
+                </li>
+            </ul>
+            """,
+            unsafe_allow_html=True
+        )
     
-    # --- Interfaz HTML + JS ---
-    st.markdown("""
-    <script>
-    let mediaRecorder;
-    let recordedChunks = [];
-    
-    async function startRecording() {
-        recordedChunks = [];
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        const video = document.querySelector("video#preview");
-        video.srcObject = stream;
-        video.play();
-    
-        mediaRecorder = new MediaRecorder(stream);
-        mediaRecorder.ondataavailable = function(e) {
-            if (e.data.size > 0) recordedChunks.push(e.data);
-        };
-    
-        mediaRecorder.onstop = function() {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const reader = new FileReader();
-            reader.onload = function() {
-                const base64data = reader.result.split(',')[1];
-                window.parent.postMessage({ type: 'VIDEO_CAPTURED', data: base64data }, '*');
-            };
-            reader.readAsDataURL(blob);
-            stream.getTracks().forEach(track => track.stop());
-        };
-    
-        mediaRecorder.start();
-        setTimeout(() => {
-            if (mediaRecorder.state === "recording") {
-                mediaRecorder.stop();
-            }
-        }, 20000); // auto stop at 20s
-    }
-    
-    function stopRecording() {
-        if (mediaRecorder && mediaRecorder.state === "recording") {
-            mediaRecorder.stop();
-        }
-    }
-    </script>
-    
-    <div style="text-align:center">
-        <video id="preview" width="480" height="360" autoplay muted></video><br>
-        <button onclick="startRecording()">🎬 Iniciar Grabación (20s máx)</button>
-        <button onclick="stopRecording()">⏹️ Detener Grabación</button>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # --- Zona para recibir el video grabado ---
-    st.markdown("### Resultado del procesamiento")
-    
-    # Escuchar el mensaje de video desde el navegador
-    video_data = st.experimental_get_query_params().get("video_data", [None])[0]
-    
-    # Manejo del video recibido
-    uploaded_video = st.file_uploader("O sube un video manualmente (opcional):", type=["mp4", "webm"])
-    
-    # --- Procesamiento del video ---
-    if uploaded_video is not None:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmpfile:
-            tmpfile.write(uploaded_video.read())
-            tmpfile.flush()
-            video_path = tmpfile.name
-    
-        st.video(video_path)
-    
-        st.info("Procesando detección de movimiento...")
-        cap = cv2.VideoCapture(video_path)
-        prev = None
-        frames_out = []
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if prev is None:
-                prev = gray
-                continue
-            diff = cv2.absdiff(prev, gray)
-            _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
-            diff_bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-            frames_out.append(diff_bgr)
-            prev = gray
-    
-        cap.release()
-    
-        if frames_out:
-            out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
-            h, w, _ = frames_out[0].shape
-            out = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'avc1'), 10, (w, h))
-            for f in frames_out:
-                out.write(f)
-            out.release()
-    
-            st.success("✅ Procesamiento completado")
-            st.video(out_path)
-            st.download_button("⬇️ Descargar resultado", open(out_path, "rb"), "movimiento_procesado.mp4")
-            os.unlink(out_path)
-    else:
-        st.info("Graba un video o súbelo manualmente para iniciar el procesamiento.")
+    with st.expander("Diferencia clave con Detección"):
+        st.markdown(
+            """
+            <ul>
+                <li>
+                    <strong>Detección</strong>: "¿Dónde está este objeto ahora?" (Procesa cada fotograma de forma independiente).
+                </li>
+                <li>
+                    <strong>Seguimiento</strong>: Responde a la pregunta: "¿Qué objeto en el fotograma anterior corresponde a este objeto en este fotograma?" (Conecta la posición a lo largo del tiempo).
+                </li>
+            </ul>
+            """,
+            unsafe_allow_html=True
+        )
 
+    scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
 
+    uploaded_file = st.file_uploader("📽️ Subir un video", type=["mp4", "avi", "mov", "mkv"])
+    if uploaded_file is not None:
+        try:
+            tfile = tempfile.NamedTemporaryFile(delete=False)
+            tfile.write(uploaded_file.read())
+            tfile.close()
+
+            cap = cv2.VideoCapture(tfile.name)
+            frames = []
+
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+                frames.append(frame)
+
+            cap.release()
+            procesar_frames(frames, scaling_factor)
+
+        except Exception as e:
+            st.error(f"Ocurrió un error procesando el video: {e}")
+        finally:
+            os.unlink(tfile.name)
 
 
 
@@ -2070,6 +2024,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
