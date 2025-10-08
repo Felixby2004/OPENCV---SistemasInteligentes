@@ -2093,7 +2093,7 @@ def capitulo11():
                     except AttributeError:
                         try:
                             # Si SIFT está en contrib (versiones antiguas)
-                            sift_test = cv2.xfeatures2d.SIFT_create
+                            sift_test = cv2.xfeatures2d.SURF_create()
                         except AttributeError:
                             # Si no existe, creamos un "mock" que levanta un error claro
                             def sift_test():
@@ -2143,6 +2143,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
