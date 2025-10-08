@@ -1,9 +1,9 @@
 ﻿# === LIBRERÍAS PRINCIPALES USADAS EN EL CÓDIGO ===
 streamlit==1.38.0
-opencv-contrib-python==4.9.0.80
 numpy==1.26.4
 opencv-python-headless==4.10.0.84
 pillow<11,>=9.0
 scipy==1.16.2
 scikit-learn==1.7.2
 attrs==25.3.0
+opencv-contrib-python==4.9.0.80
