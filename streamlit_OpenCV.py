@@ -1267,9 +1267,9 @@ def capitulo8():
             
         frame = cv2.resize(frame, None, fx=scaling_factor, 
                             fy=scaling_factor, interpolation=cv2.INTER_AREA) 
-        
         return frame, True
 
+    # --- Encabezado e información ---
     st.markdown(
         """
         <div class="chapter-box">
@@ -1288,9 +1288,7 @@ def capitulo8():
             """
             <p>Mantener la identidad del objeto a través de múltiples fotogramas (frames) de video.</p>
             <ul>
-                <li>
-                    <strong>Propósito</strong>: Simplificar la imagen para que solo se quede con el objeto de interés, separándolo del fondo y de otros elementos.
-                </li>
+                <li><strong>Propósito:</strong> Simplificar la imagen para que solo se quede con el objeto de interés, separándolo del fondo y otros elementos.</li>
             </ul>
             """,
             unsafe_allow_html=True
@@ -1300,83 +1298,79 @@ def capitulo8():
         st.markdown(
             """
             <ul>
-                <li>
-                    <strong>Detección</strong>: "¿Dónde está este objeto ahora?" (Procesa cada fotograma de forma independiente).
-                </li>
-                <li>
-                    <strong>Seguimiento</strong>: Responde a la pregunta: "¿Qué objeto en el fotograma anterior corresponde a este objeto en este fotograma?" (Conecta la posición a lo largo del tiempo).
-                </li>
+                <li><strong>Detección:</strong> "¿Dónde está este objeto ahora?" (Procesa cada fotograma de forma independiente).</li>
+                <li><strong>Seguimiento:</strong> "¿Qué objeto en el fotograma anterior corresponde a este objeto en este fotograma?" (Conecta la posición a lo largo del tiempo).</li>
             </ul>
             """,
             unsafe_allow_html=True
         )
+    
+    # --- Subida de video ---
+    uploaded_file = st.file_uploader("📹 Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
 
-    # Subida de archivo
-    uploaded_file = st.file_uploader("📽️ Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
-    if uploaded_file is None:
-        st.info("Por favor, sube un video para comenzar.")
+    if uploaded_file is not None:
+        scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
+    else:
+        st.info("Sube un video para iniciar la detección de movimiento.")
         return
 
-    # Selector de escala
-    scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
-
     st.markdown("---")
+    
+    # Procesamiento
+    temp_file_path = None
+    cap = None
+    FRAME_WINDOW_CUR = None
+    FRAME_WINDOW_DIFF = None
 
-    # Guardar archivo temporalmente
     try:
+        # Guardar archivo temporalmente
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_file.read())
         tfile.close()
-        video_path = tfile.name
-    except Exception as e:
-        st.error(f"Error al guardar archivo temporal: {e}")
-        return
-
-    # Mostrar procesamiento
-    st.info("Procesando...")
-
-    # Función de diferencia de frames
-    def frame_diff(prev_frame, cur_frame, next_frame):
-        diff_frames1 = cv2.absdiff(next_frame, cur_frame)
-        diff_frames2 = cv2.absdiff(cur_frame, prev_frame)
-        return cv2.bitwise_and(diff_frames1, diff_frames2)
-
-    try:
-        cap = cv2.VideoCapture(video_path)
-        prev_frame, cur_frame, next_frame = None, None, None
-
+        temp_file_path = tfile.name
+        
+        cap = cv2.VideoCapture(temp_file_path)
+        if not cap.isOpened():
+            st.error("No se pudo abrir el archivo de video. Verifica el formato o inténtalo nuevamente.")
+            return
+        
+        st.markdown("### 🎞️ Fuente Actual (Grises)")
         FRAME_WINDOW_CUR = st.empty()
+        st.markdown("---")
+        st.markdown("### 🔍 Resultado de Detección de Movimiento")
         FRAME_WINDOW_DIFF = st.empty()
-
-        while True:
-            ret, frame = cap.read()
+            
+        prev_frame, cur_frame, next_frame = None, None, None
+        
+        # Bucle de procesamiento
+        while cap.isOpened():
+            frame_bgr, ret = get_frame(cap, scaling_factor)
             if not ret:
                 break
-
-            # Redimensionar y convertir a gris
-            frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            # Desplazar frames
-            prev_frame = cur_frame
+                
+            prev_frame = cur_frame 
             cur_frame = next_frame
-            next_frame = gray
-
-            # Mostrar diferencia
+            next_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+            
             if prev_frame is not None and cur_frame is not None:
                 diff_img = frame_diff(prev_frame, cur_frame, next_frame)
-                _, diff_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
+                _, diff_img_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
+                
+                cur_frame_rgb = cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB)
+                diff_img_rgb = cv2.cvtColor(diff_img_thresh, cv2.COLOR_GRAY2RGB)
 
-                FRAME_WINDOW_CUR.image(cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB), channels="RGB")
-                FRAME_WINDOW_DIFF.image(cv2.cvtColor(diff_thresh, cv2.COLOR_GRAY2RGB), channels="RGB")
+                FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB", use_container_width=True)
+                FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB", use_container_width=True)
 
         cap.release()
+        st.success("✅ Procesamiento finalizado correctamente.")
     except Exception as e:
         st.error(f"Ocurrió un error durante el procesamiento del video: {e}")
     finally:
-        if os.path.exists(video_path):
-            os.unlink(video_path)
-
+        if cap is not None:
+            cap.release()
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
 
 
 def capitulo9():
@@ -2081,6 +2075,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
