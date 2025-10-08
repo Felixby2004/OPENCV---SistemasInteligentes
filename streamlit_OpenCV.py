@@ -1357,7 +1357,7 @@ def capitulo8():
             img_file = st.camera_input("Toma una foto")
             if img_file is not None:
                 cap = Image.open(img_file)
-                st.image(cap, caption="Imagen capturada", use_container_width=True)
+                st.image(cap, caption="Imagen capturada")
             
             if not cap.isOpened():
                 st.error(f"No se pudo acceder a la fuente de video ({opcion}). Verifica permisos o el archivo.")
@@ -1795,7 +1795,6 @@ def capitulo10():
                 st.image(
                     cv2.cvtColor(st.session_state.first_frame, cv2.COLOR_BGR2RGB),
                     caption="Imagen capturada",
-                    use_container_width=True
                 )
             
            # st.session_state.state = "INIT"
@@ -2117,6 +2116,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
