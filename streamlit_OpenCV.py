@@ -2027,8 +2027,9 @@ def capitulo11():
             <p>
                 Es un subconjunto de la Inteligencia Artificial que se inspira en la estructura y funcionamiento del cerebro humano. Su objetivo es enseñar a una computadora a aprender patrones y tomar decisiones basándose en grandes cantidades de datos, en lugar de ser programada explícitamente para cada tarea.
                 <br>
-                <h3>ACLARACIÓN: Este red neuronal artificial funciona para animales que son perros, gatos y loros. Cualquier otro tipo de imagen no justificará un mal análisis.</h3>
             </p>
+            <div class="chapter-title"></div>
+            <b>ACLARACIÓN: Este red neuronal artificial funciona para animales que son perros, gatos y loros. Cualquier otro tipo de imagen no justificará un mal análisis.</b>
         </div>
         """,
         unsafe_allow_html=True
@@ -2168,6 +2169,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
