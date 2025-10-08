@@ -713,20 +713,26 @@ def capitulo4():
     
     st.info("Activa la cámara en el cuadro de abajo.")
 
-    # 3. Creamos la función fábrica que inicializa el transformador
-    # Usamos las variables locales face_cascade y glasses_img
-    transformer_factory = lambda: ARFaceOverlayTransformer(
-        face_cascade=face_cascade,
-        glasses_img=glasses_img,
-        overlay_func=overlay_image_alpha
-    )
+    img_file = st.camera_input("")
+    if img_file is not None:
+        # Convertir imagen a OpenCV BGR
+        img = Image.open(img_file)
+        frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-    # 4. Iniciamos el stream
-    webrtc_streamer(
-        key="face-detector",
-        video_processor_factory=transformer_factory,  # ✅ reemplazado
-        media_stream_constraints={"video": True, "audio": False},
-    )
+        # Detectar caras
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+
+        for (x, y, w, h) in faces:
+            glasses_w = int(w * 1.2)
+            glasses_h = int(h * 0.4)
+            glasses_x = x - int(w * 0.10)
+            glasses_y = y + int(h * 0.25)
+
+            frame = overlay_image_alpha(glasses_img, frame, glasses_x, glasses_y, glasses_w, glasses_h)
+
+        # Mostrar resultado en Streamlit
+        st.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
 
 
 def capitulo5():
@@ -2161,6 +2167,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
