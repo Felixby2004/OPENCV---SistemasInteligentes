@@ -1748,7 +1748,7 @@ def capitulo10():
     tracker = st.session_state.tracker
 
     # --- 1. SELECCIÓN DE FUENTE ---
-    opcion = st.radio("Selecciona la fuente:", ["📷 Cámara en Vivo", "📂 Subir Archivo"])
+    opcion = st.radio("Selecciona la fuente:", ["📂 Subir Archivo", "📷 Cámara en Vivo"])
     
     # --- BOTÓN DE REINICIO TOTAL (DEBAJO DE LAS FUENTES) ---
     if st.button("🔄 Reiniciar Todo", key='full_reset', type='secondary'):
@@ -2145,6 +2145,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
