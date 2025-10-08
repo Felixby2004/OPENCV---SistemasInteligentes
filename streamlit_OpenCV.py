@@ -1776,7 +1776,7 @@ def capitulo10():
     # =========================================================
     
     # === A. ESTADO: INICIO (INIT) / CÁMARA ACTIVA ===
-    if st.session_state.state == "INIT" or st.session_state.state == "CAMERA_ACTIVE":
+    if st.session_state.state == "INIT":
         
         if st.session_state.source_type == "CAMERA":
             img_file = st.camera_input("")
@@ -2107,6 +2107,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
