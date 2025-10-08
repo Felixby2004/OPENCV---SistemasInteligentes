@@ -547,7 +547,7 @@ def capitulo3():
         FRAME_WINDOW = st.empty()
         CAMERA_SLOT = st.empty()  # Aquí pondremos el st.camera_input
 
-        img_file = CAMERA_SLOT.camera_input()
+        img_file = CAMERA_SLOT.camera_input("")
         
         if img_file is not None:
             # Ocultar el widget de cámara
@@ -2136,6 +2136,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
