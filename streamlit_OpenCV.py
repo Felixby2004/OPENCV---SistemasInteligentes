@@ -654,13 +654,6 @@ def capitulo4():
         except Exception as e:
             st.error(f"Error general durante la carga de recursos: {e}")
             return None, None, None
-        
-    try:
-        # Llama a tu función de carga de recursos UNA VEZ
-        face_cascade_global, eye_cascade_global, glasses_img_global = load_resources()
-    except Exception as e:
-        # Si hay un error de recursos, Streamlit lo mostrará de todas formas.
-        pass
     
     # =========================================================
     # --- CLASE DE PROCESAMIENTO DE VIDEO EN VIVO (WEB RTC) ---
@@ -712,6 +705,12 @@ def capitulo4():
             # 6. Devuelve el frame procesado (NumPy array BGR)
             return frame
 
+    try:
+        # Llama a tu función de carga de recursos UNA VEZ
+        face_cascade_global, eye_cascade_global, glasses_img_global = load_resources()
+    except Exception as e:
+        # Si hay un error de recursos, Streamlit lo mostrará de todas formas.
+        pass
     
     st.markdown(
         """
@@ -733,9 +732,8 @@ def capitulo4():
     # 1. Creamos la función fábrica que inicializa el transformador
     # Pasamos los recursos cargados y la función de superposición
     transformer_factory = lambda: ARFaceOverlayTransformer(
-        face_cascade=face_cascade_global,
-        glasses_img=glasses_img_global,
-        # Usamos la función overlay_image_alpha tal cual la definiste
+        face_cascade=face_cascade,
+        glasses_img=glasses_img,
         overlay_func=overlay_image_alpha 
     )
 
@@ -2184,6 +2182,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
