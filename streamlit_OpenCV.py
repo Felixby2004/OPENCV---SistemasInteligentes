@@ -953,7 +953,8 @@ def capitulo6():
         """
         <div class="chapter-box">
             <div class="chapter-title">Capítulo 6 - Eliminador de Objetos</div>
-            (Seam Carving)
+            Usando una técnica o metodo conocida como Seam Carving. Asi como existen telas para la ropa, una imagen puede comportarse como tela y eliminar ciertos pixeles que no queremos.<br>
+            Evidentemente este proceso toma un poco de tiempo pero cumple su objetivo. Aqui puede subir una imagen o usar la que está por defecto, le saldrá un rectangulo y usted debe marcar que parte de la imagen quiere eliminar.
         </div>
         """,
         unsafe_allow_html=True
@@ -2165,6 +2166,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
