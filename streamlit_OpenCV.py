@@ -1415,15 +1415,15 @@ def capitulo9():
                     keypoints.append(cv2.KeyPoint(float(y), float(x), self.initXyStep))
             return keypoints 
 
-    class SIFTDetector():
+    class SIFTDetector:
         def __init__(self):
-            # NOTA: Requiere 'opencv-contrib-python' instalado
-            self.detector = cv2.SURF_create()
-
-        def detect(self, img):
-            # SIFT trabaja mejor en escala de grises
-            gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            return self.detector.detect(gray_image, None)
+            # Usa SIFT, no SURF
+            self.detector = cv2.SIFT_create()
+        
+        def detect(self, image):
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            keypoints = self.detector.detect(gray, None)
+            return keypointsZ
 
     st.markdown(
         """
@@ -2166,6 +2166,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
