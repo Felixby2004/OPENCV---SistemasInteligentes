@@ -1402,7 +1402,7 @@ def capitulo9():
     class SIFTDetector():
         def __init__(self):
             # NOTA: Requiere 'opencv-contrib-python' instalado
-            self.detector = cv2.SURF_create
+            self.detector = cv2.SURF_create()
 
         def detect(self, img):
             # SIFT trabaja mejor en escala de grises
@@ -2089,7 +2089,7 @@ def capitulo11():
                     # Parche universal para compatibilidad SIFT
                     try:
                         # Si SIFT está en el módulo principal (versiones nuevas)
-                        sift_test = cv2.SURF_create
+                        sift_test = cv2.SURF_create()
                     except AttributeError:
                         try:
                             # Si SIFT está en contrib (versiones antiguas)
@@ -2143,6 +2143,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
