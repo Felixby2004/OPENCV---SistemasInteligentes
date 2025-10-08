@@ -1252,6 +1252,42 @@ def capitulo7():
 
 
 def capitulo8():
+    def procesar_frames(frames, scaling_factor):
+        st.info("🔄 Procesando movimiento... Esto puede tardar unos segundos.")
+        prev_frame = None
+        frames_out = []
+
+        for frame in frames:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+    
+            if prev_frame is None:
+                prev_frame = gray
+                continue
+    
+            diff = cv2.absdiff(prev_frame, gray)
+            _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+            diff_color = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+            frames_out.append(diff_color)
+    
+            prev_frame = gray
+    
+        if not frames_out:
+            st.warning("No se detectaron suficientes cambios entre los fotogramas.")
+            return
+    
+        h, w, _ = frames_out[0].shape
+        temp_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+        out = cv2.VideoWriter(temp_out.name, cv2.VideoWriter_fourcc(*'avc1'), 10, (w, h))
+    
+        for f in frames_out:
+            out.write(f)
+        out.release()
+    
+        st.video(temp_out.name)
+        st.download_button("⬇️ Descargar video procesado", open(temp_out.name, "rb"), "movimiento_detectado.mp4")
+        os.unlink(temp_out.name)
+    
     st.markdown(
         """
         <div class="chapter-box">
@@ -2023,6 +2059,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
