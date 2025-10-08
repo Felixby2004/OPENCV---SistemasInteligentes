@@ -538,17 +538,6 @@ def capitulo3():
             st.error("No se encontró 'road.jpg'")
     
     elif opcion == "📷 Usar cámara":
-        def get_available_camera(max_cams=5):
-            """Prueba cámaras del 0 al max_cams-1 y devuelve la primera disponible o None."""
-            for i in range(max_cams):
-                cap = cv2.VideoCapture(i)
-                if cap is not None and cap.isOpened():
-                    return cap
-                else:
-                    if cap is not None:
-                        cap.release()
-            return None
-        
         ksize = st.select_slider(
             "👀 Tamaño del filtro (ksize)",
             options=[1,3,5,7,9,11,13,15,17],
@@ -556,27 +545,23 @@ def capitulo3():
         )
         
         FRAME_WINDOW = st.empty()
-
-        cap = get_available_camera(max_cams=5)
         
-        if cap is None:
-            st.error("No se pudo encontrar ninguna cámara disponible.")
+        img_file = st.camera_input("📸 Toma una foto")
+        
+        if img_file is not None:
+            img = Image.open(img_file)
+            frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+        
+            cartoon_frame = cartoonize_image(frame, ksize=ksize)
+        
+            combined = np.hstack([
+                cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                cv2.cvtColor(cartoon_frame, cv2.COLOR_BGR2RGB)
+            ])
+        
+            FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
         else:
-            # Aquí sí puedes usar cap.isOpened() con seguridad
-            try:
-                while True:
-                    ret, frame = cap.read()
-                    if not ret:
-                        st.warning("⚠️ No se pudo capturar el frame.")
-                        break
-                    cartoon_frame = cartoonize_image(frame, ksize=ksize)
-                    combined = np.hstack([
-                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                        cv2.cvtColor(cartoon_frame, cv2.COLOR_BGR2RGB)
-                    ])
-                    FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
-            finally:
-                cap.release()
+            st.info("📷 Apunta tu cámara y toma una foto para ver el efecto.")
 
 
 def capitulo4():
@@ -2148,6 +2133,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
