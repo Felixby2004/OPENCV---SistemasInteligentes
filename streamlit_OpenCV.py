@@ -1293,11 +1293,10 @@ def capitulo8():
             unsafe_allow_html=True
         )
 
-    scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
-
     uploaded_file = st.file_uploader("📽️ Subir un video", type=["mp4", "avi", "mov", "mkv"])
     if uploaded_file is not None:
         try:
+            scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
             tfile = tempfile.NamedTemporaryFile(delete=False)
             tfile.write(uploaded_file.read())
             tfile.close()
@@ -2024,6 +2023,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
