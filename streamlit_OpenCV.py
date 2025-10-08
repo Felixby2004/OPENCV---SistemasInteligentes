@@ -554,7 +554,15 @@ def capitulo3():
         
         FRAME_WINDOW = st.empty()
 
-        cap = cv2.VideoCapture(0)
+        for i in range(3):
+            cap = cv2.VideoCapture(i)
+            if cap.isOpened():
+                print(f"✅ Cámara encontrada: índice {i}")
+                break
+            cap.release()
+        else:
+            print("❌ No se detectó ninguna cámara")
+        
         if not cap.isOpened():
             st.warning("No se puede acceder a la cámara")
         else:  
@@ -2102,6 +2110,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
