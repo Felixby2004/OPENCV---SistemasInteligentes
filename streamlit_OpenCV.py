@@ -538,39 +538,30 @@ def capitulo3():
             st.error("No se encontró 'road.jpg'")
     
     elif opcion == "📷 Usar cámara":
-        st.subheader("🔍 Resultados")
-    
+        st.subheader("🔍 Cámara en vivo estilo Caricatura")
+        
         ksize = st.select_slider(
             "👀 Tamaño del filtro (ksize)",
-            options=[1, 3, 5, 7, 9, 11, 13, 15, 17],
+            options=[1,3,5,7,9,11,13,15,17],
             value=5
         )
-    
-        col_label_orig, col_label_result = st.columns(2)
-        with col_label_orig:
-            st.markdown("### 1. Cámara Normal") 
-        with col_label_result:
-            st.markdown("### 2. Caricatura")
         
         FRAME_WINDOW = st.empty()
-    
-        img_file = st.camera_input("📸 Toma una foto", key="camera_input_1")  # key único
-    
+        
+        img_file = st.camera_input("📸 Cámara en vivo", key="live_camera")  # cada frame es un nuevo img_file
+        
         if img_file is not None:
-            # Convertir PIL a formato OpenCV (BGR)
-            cap = Image.open(img_file)
-            st.image(cap, caption="Imagen capturada", use_container_width=True)
-    
-            frame = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
-            result = cartoonize_image(frame, ksize=ksize, sketch_mode=True)
-    
+            img = Image.open(img_file)
+            frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            result = cartoonize_image(frame, ksize=ksize)
+            
             combined = np.hstack([
                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
                 cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
             ])
-            st.image(combined, caption="Original y resultado", use_container_width=True)
+            FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
         else:
-            st.info("📷 Toma una foto para ver el efecto de caricatura.")
+            st.info("📷 Apunta tu cámara y toma una foto para ver el efecto.")
 
 
 def capitulo4():
@@ -2142,6 +2133,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
