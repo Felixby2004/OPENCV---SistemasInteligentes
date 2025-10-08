@@ -556,8 +556,8 @@ def capitulo3():
 
         img_file = st.camera_input("Toma una foto")
         if img_file is not None:
-            img = Image.open(img_file)
-            st.image(img, caption="Imagen capturada", use_container_width=True)
+            cap = Image.open(img_file)
+            st.image(cap, caption="Imagen capturada", use_container_width=True)
         
         if not cap.isOpened():
             st.warning("No se puede acceder a la cámara")
@@ -659,7 +659,12 @@ def capitulo4():
     frame_placeholder = st.empty() # Contenedor para mostrar el video
 
     if run:
-        cap = cv2.VideoCapture(0)
+        img_file = st.camera_input("Toma una foto")
+
+        if img_file is not None:
+            cap = Image.open(img_file)
+            st.image(cap, caption="Imagen capturada", use_container_width=True)
+        
         scaling_factor = 1
         
         if not cap.isOpened():
@@ -1322,7 +1327,11 @@ def capitulo8():
         
         # 2. Inicializar la captura y procesamiento
         try:
-            cap = cv2.VideoCapture(source)
+            img_file = st.camera_input("Toma una foto")
+            if img_file is not None:
+                cap = Image.open(img_file)
+                st.image(cap, caption="Imagen capturada", use_container_width=True)
+            
             if not cap.isOpened():
                 st.error(f"No se pudo acceder a la fuente de video ({opcion}). Verifica permisos o el archivo.")
                 return
@@ -1772,7 +1781,14 @@ def capitulo10():
                 cap = st.session_state.cap
                 
                 while st.session_state.state == "CAMERA_ACTIVE" and cap and cap.isOpened():
+                    img_file = st.camera_input("Toma una foto")
+                    
+                    if img_file is not None:
+                        cap = Image.open(img_file)
+                        st.image(cap, caption="Imagen capturada", use_container_width=True)
+
                     ret, frame = cap.read()
+
                     if not ret: 
                         status_text.error("Error de cámara. Intente Reiniciar Todo.")
                         st.session_state.state = "INIT"
@@ -2067,6 +2083,10 @@ def capitulo11():
                     # 3. Convertir de RGB a BGR (formato nativo de OpenCV)
                     # Este es el formato final que tu clasificador espera para cv2.imread()
                     input_img = cv2.cvtColor(numpy_img_rgb, cv2.COLOR_RGB2BGR)
+
+                    if not hasattr(cv2, "xfeatures2d"):
+                        import types
+                        cv2.xfeatures2d = types.SimpleNamespace(SIFT_create=cv2.SIFT_create)
                     
                     # Ahora recibe la etiqueta y las probabilidades
                     tag, probabilities = classifier.get_image_tag(input_img)
@@ -2106,6 +2126,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
