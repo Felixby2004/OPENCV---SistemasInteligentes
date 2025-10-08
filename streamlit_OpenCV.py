@@ -613,8 +613,7 @@ def overlay_image_alpha(lentes, frame, x, y, w, h):
 
     # 7. Superposición: (Lentes * Alfa) + (Fondo * (1 - Alfa))
     for c in range(0, 3):
-        frame[y1:y2, x1:x2, c] = (alpha_s * lentes_bgr[:, :, c] +
-                                  alpha_l * roi[:, :, c])
+        frame[y1:y2, x1:x2, c] = (alpha_s * lentes_bgr[:, :, c] + alpha_l * roi[:, :, c])
     return frame
 
 @st.cache_resource
@@ -721,7 +720,6 @@ def capitulo4():
     # Usamos las variables locales face_cascade y glasses_img
     transformer_factory = lambda: ARFaceOverlayTransformer(
         face_cascade=face_cascade,
-        eye_cascade=eye_cascade,
         glasses_img=glasses_img,
         overlay_func=overlay_image_alpha
     )
@@ -2166,6 +2164,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
