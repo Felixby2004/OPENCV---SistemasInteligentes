@@ -1253,96 +1253,116 @@ def capitulo7():
 
 
 def capitulo8():
-    st.title("🎥 Grabación automática con cámara (modo Streamlit Cloud)")
+    st.title("🎥 Detección de Movimiento Automática (Streamlit Cloud Compatible)")
+
+    st.markdown("""
+    Graba video automáticamente usando la cámara del navegador.  
+    Cuando termines, presiona **Detener grabación** para procesar el movimiento detectado.
+    """)
     
-    if "grabando" not in st.session_state:
-        st.session_state.grabando = False
-    if "frames" not in st.session_state:
-        st.session_state.frames = []
-    if "start_time" not in st.session_state:
-        st.session_state.start_time = None
+    # --- Interfaz HTML + JS ---
+    st.markdown("""
+    <script>
+    let mediaRecorder;
+    let recordedChunks = [];
     
-    # --- Control de grabación ---
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        iniciar = st.button("▶️ Iniciar grabación", disabled=st.session_state.grabando)
-    with col2:
-        detener = st.button("⏹️ Detener y procesar", disabled=not st.session_state.grabando)
+    async function startRecording() {
+        recordedChunks = [];
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const video = document.querySelector("video#preview");
+        video.srcObject = stream;
+        video.play();
     
-    # --- Inicia grabación ---
-    if iniciar:
-        st.session_state.grabando = True
-        st.session_state.frames = []
-        st.session_state.start_time = time.time()
-        st.rerun()
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = function(e) {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+        };
     
-    # --- Captura automática mientras grabando ---
-    if st.session_state.grabando:
-        tiempo = time.time() - st.session_state.start_time
-        st.info(f"⏱️ Grabando... {tiempo:.1f}s / 20s")
-        img = st.camera_input("📸 Grabando automáticamente (no toques nada)...", key=str(time.time()))
-        
-        if img is not None:
-            st.session_state.frames.append(img)
+        mediaRecorder.onstop = function() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const reader = new FileReader();
+            reader.onload = function() {
+                const base64data = reader.result.split(',')[1];
+                window.parent.postMessage({ type: 'VIDEO_CAPTURED', data: base64data }, '*');
+            };
+            reader.readAsDataURL(blob);
+            stream.getTracks().forEach(track => track.stop());
+        };
     
-        if tiempo >= 20:
-            st.session_state.grabando = False
-            st.rerun()
+        mediaRecorder.start();
+        setTimeout(() => {
+            if (mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+            }
+        }, 20000); // auto stop at 20s
+    }
     
-    # --- Procesamiento cuando se detiene ---
-    if detener and len(st.session_state.frames) > 3:
-        st.session_state.grabando = False
-        with st.status("Procesando movimiento...", expanded=True) as status:
-            frames_rgb = []
-            for i, file in enumerate(st.session_state.frames):
-                try:
-                    image = Image.open(file)
-                    frame = np.array(image)
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                    frames_rgb.append(frame)
-                    status.write(f"Frame {i+1} cargado.")
-                except Exception as e:
-                    status.write(f"⚠️ Error en frame {i}: {e}")
+    function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+        }
+    }
+    </script>
     
-            # Procesamiento: detección de movimiento simple
-            processed_frames = []
-            prev_gray = None
-            for i, frame in enumerate(frames_rgb):
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                if prev_gray is None:
-                    prev_gray = gray
-                    continue
-                diff = cv2.absdiff(prev_gray, gray)
-                _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
-                color_diff = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-                processed_frames.append(color_diff)
-                prev_gray = gray
-                status.write(f"Procesado frame {i+1}")
+    <div style="text-align:center">
+        <video id="preview" width="480" height="360" autoplay muted></video><br>
+        <button onclick="startRecording()">🎬 Iniciar Grabación (20s máx)</button>
+        <button onclick="stopRecording()">⏹️ Detener Grabación</button>
+    </div>
+    """, unsafe_allow_html=True)
     
-            # Guardar video temporal
-            if processed_frames:
-                temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-                height, width, _ = processed_frames[0].shape
-                out = cv2.VideoWriter(temp_video.name, cv2.VideoWriter_fourcc(*'avc1'), 5, (width, height))
-                for frame in processed_frames:
-                    out.write(frame)
-                out.release()
+    # --- Zona para recibir el video grabado ---
+    st.markdown("### Resultado del procesamiento")
     
-                status.update(label="✅ Procesamiento completado", state="complete")
-                st.video(temp_video.name)
-                st.download_button("⬇️ Descargar video", open(temp_video.name, "rb"), "movimiento_procesado.mp4")
-                os.unlink(temp_video.name)
-            else:
-                st.warning("⚠️ No se generaron frames procesados.")
+    # Escuchar el mensaje de video desde el navegador
+    video_data = st.experimental_get_query_params().get("video_data", [None])[0]
     
-            st.session_state.frames = []
+    # Manejo del video recibido
+    uploaded_video = st.file_uploader("O sube un video manualmente (opcional):", type=["mp4", "webm"])
     
-    elif detener:
-        st.warning("No hay suficientes frames para procesar (toma más capturas primero).")
+    # --- Procesamiento del video ---
+    if uploaded_video is not None:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmpfile:
+            tmpfile.write(uploaded_video.read())
+            tmpfile.flush()
+            video_path = tmpfile.name
     
-    # --- Estado final ---
-    if not st.session_state.grabando and len(st.session_state.frames) == 0:
-        st.info("Presiona 'Iniciar grabación' para comenzar. Dura máximo 20 segundos.")
+        st.video(video_path)
+    
+        st.info("Procesando detección de movimiento...")
+        cap = cv2.VideoCapture(video_path)
+        prev = None
+        frames_out = []
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if prev is None:
+                prev = gray
+                continue
+            diff = cv2.absdiff(prev, gray)
+            _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+            diff_bgr = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+            frames_out.append(diff_bgr)
+            prev = gray
+    
+        cap.release()
+    
+        if frames_out:
+            out_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
+            h, w, _ = frames_out[0].shape
+            out = cv2.VideoWriter(out_path, cv2.VideoWriter_fourcc(*'avc1'), 10, (w, h))
+            for f in frames_out:
+                out.write(f)
+            out.release()
+    
+            st.success("✅ Procesamiento completado")
+            st.video(out_path)
+            st.download_button("⬇️ Descargar resultado", open(out_path, "rb"), "movimiento_procesado.mp4")
+            os.unlink(out_path)
+    else:
+        st.info("Graba un video o súbelo manualmente para iniciar el procesamiento.")
 
 
 
@@ -2050,6 +2070,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
