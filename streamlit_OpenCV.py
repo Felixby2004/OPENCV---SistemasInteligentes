@@ -2089,18 +2089,18 @@ def capitulo11():
                     # Parche universal para compatibilidad SIFT
                     try:
                         # Si SIFT está en el módulo principal (versiones nuevas)
-                        sift_test = cv2.SIFT_create
+                        sift_test = cv2.SURF_create
                     except AttributeError:
                         try:
                             # Si SIFT está en contrib (versiones antiguas)
-                            sift_test = cv2.xfeatures2d.SURF_create()
+                            sift_test = cv2.xfeatures2d.SURF_create
                         except AttributeError:
                             # Si no existe, creamos un "mock" que levanta un error claro
                             def sift_test():
                                 raise RuntimeError("Tu instalación de OpenCV no tiene SIFT. Instala 'opencv-contrib-python'.")
 
                     # Inyectar compatibilidad para ambos namespaces
-                    cv2.SIFT_create = sift_test
+                    cv2.SURF_create = sift_test
                     if not hasattr(cv2, "xfeatures2d"):
                         import types
                         cv2.xfeatures2d = types.SimpleNamespace(SIFT_create=sift_test)
@@ -2143,6 +2143,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
