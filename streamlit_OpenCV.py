@@ -722,7 +722,6 @@ def capitulo4():
     )
 
     st.markdown("---")
-    st.warning("Recuerda que tu código ahora es **Video en Vivo**. El código antiguo con `st.camera_input` y `cap.read()` ya no es necesario.")
 
 
 def capitulo5():
@@ -2157,6 +2156,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
