@@ -2135,10 +2135,18 @@ def capitulo11():
                             st.error(f"Error durante el procesamiento o clasificación: {e}")
                             st.info("Verifica que los archivos de modelo sean compatibles.")
 
+        except Exception:
+            st.warning(
+                "**No se pudo abrir la imagen.**\n\n"
+                "Asegúrate de que sea un archivo de imagen válido (JPEG, PNG, BMP) y que no esté dañado.\n\n"
+                "Intenta subir otra imagen o verificar que el archivo no esté corrupto."
+            )
+
 
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
