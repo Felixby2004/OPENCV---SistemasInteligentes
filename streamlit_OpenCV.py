@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 import tempfile
 import os
+import io
 import math
 import types
 import time
@@ -2084,19 +2085,17 @@ def capitulo11():
 
     # --- 2. Interfaz de Subida de Archivo ---
     uploaded_file = st.file_uploader("📂 Sube una imagen", type=["png","jpg","jpeg"])
-    
+
     if uploaded_file is not None:
-        # Abrir la imagen con PIL
         try:
-            pil_img = Image.open(uploaded_file).convert("RGB")
+            # Leer los bytes y crear PIL Image
+            pil_img = Image.open(io.BytesIO(uploaded_file.read())).convert("RGB")
         except Exception as e:
             st.error(f"No se pudo abrir la imagen: {e}")
         else:
-            # Mostrar la imagen
             st.image(pil_img, caption="Imagen de Entrada")
             st.markdown("---")
     
-            # Botón de clasificación
             if st.button("✨ **Clasificar Imagen**"):
                 with st.spinner("Procesando..."):
                     try:
@@ -2142,3 +2141,4 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
