@@ -571,6 +571,24 @@ def capitulo3():
 def capitulo4():
     global face_cascade_global, glasses_img_global
     face_cascade_global, eye_cascade_global, glasses_img_global = None, None, None
+
+    def load_resources():
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        
+        # Cargar la imagen de los lentes (debe ser PNG con canal alfa/transparencia)
+        try:
+            # Asegúrate de tener 'glasses.png' en el mismo directorio.
+            glasses_img = cv2.imread('sunglasses.png', cv2.IMREAD_UNCHANGED)
+            if glasses_img is None or face_cascade.empty() or eye_cascade.empty():
+                st.error("Error: Asegúrate de que 'sunglasses.png' y los archivos 'haarcascade' estén en la ruta correcta.")
+                return None, None, None
+        except Exception as e:
+            st.error(f"Error al cargar recursos: {e}")
+            return None, None, None
+            
+        return face_cascade, eye_cascade, glasses_img
+        
     try:
         # Llama a tu función de carga de recursos UNA VEZ
         face_cascade_global, eye_cascade_global, glasses_img_global = load_resources()
@@ -627,23 +645,6 @@ def capitulo4():
     
             # 6. Devuelve el frame procesado (NumPy array BGR)
             return frame
-
-    def load_resources():
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-        
-        # Cargar la imagen de los lentes (debe ser PNG con canal alfa/transparencia)
-        try:
-            # Asegúrate de tener 'glasses.png' en el mismo directorio.
-            glasses_img = cv2.imread('sunglasses.png', cv2.IMREAD_UNCHANGED)
-            if glasses_img is None or face_cascade.empty() or eye_cascade.empty():
-                st.error("Error: Asegúrate de que 'sunglasses.png' y los archivos 'haarcascade' estén en la ruta correcta.")
-                return None, None, None
-        except Exception as e:
-            st.error(f"Error al cargar recursos: {e}")
-            return None, None, None
-            
-        return face_cascade, eye_cascade, glasses_img
 
     
     st.markdown(
@@ -2118,6 +2119,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
