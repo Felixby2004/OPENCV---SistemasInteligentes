@@ -1,11 +1,9 @@
 ﻿# === LIBRERÍAS PRINCIPALES USADAS EN EL CÓDIGO ===
-streamlit==1.38.0       # Para la interfaz web
-opencv-contrib-python==4.9.0.80   # Para cv2 y las funcionalidades BoVW (SIFT, etc.)
-numpy==1.26.4            # Para manipulación de arrays y operaciones matriciales
+streamlit==1.38.0
+opencv-contrib-python==4.9.0.80
+numpy==1.26.4
 opencv-python-headless==4.10.0.84
-pillow==11.3.0          # Para la clase Image
-scipy==1.16.2           # Para la función softmax (cálculo de probabilidades)
-scikit-learn==1.7.2     # Para KMeans (código de entrenamiento)
-attrs==25.3.0           # Dependencia de Streamlit
-opencv-python==4.9.0.80 # Cambia a una versión probada
-
+pillow<11,>=9.0
+scipy==1.16.2
+scikit-learn==1.7.2
+attrs==25.3.0
