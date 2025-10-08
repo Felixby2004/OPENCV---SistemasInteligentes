@@ -1748,7 +1748,7 @@ def capitulo10():
     tracker = st.session_state.tracker
 
     # --- 1. SELECCIÓN DE FUENTE ---
-    opcion = st.radio("Selecciona la fuente:", ["📂 Subir Archivo", "📷 Cámara en Vivo"])
+    opcion = st.radio("Selecciona la opción:", ["📂 Subir Archivo", "📷 Usar cámara"])
     
     # --- BOTÓN DE REINICIO TOTAL (DEBAJO DE LAS FUENTES) ---
     if st.button("🔄 Reiniciar Todo", key='full_reset', type='secondary'):
@@ -1757,7 +1757,7 @@ def capitulo10():
         st.rerun()
 
     # Lógica de cambio de fuente
-    current_source_type = "CAMERA" if opcion == "📷 Cámara en Vivo" else "IMAGE"
+    current_source_type = "CAMERA" if opcion == "📷 Usar cámara" else "IMAGE"
     if st.session_state.source_type != current_source_type:
         if st.session_state.cap: st.session_state.cap.release()
         st.session_state.tracker = StreamlitTrackerOBJ(0.8, OBJ_FILE)
@@ -1779,54 +1779,26 @@ def capitulo10():
     if st.session_state.state == "INIT" or st.session_state.state == "CAMERA_ACTIVE":
         
         if st.session_state.source_type == "CAMERA":
-            # --- LÓGICA DE CÁMARA EN VIVO (Activación Automática) ---
-            if st.session_state.state == "INIT":
-                st.session_state.cap = cv2.VideoCapture(0)
-                if st.session_state.cap and st.session_state.cap.isOpened():
-                    st.session_state.state = "CAMERA_ACTIVE"
-                else:
-                    status_text.error("No se pudo acceder a la Webcam (capId=0).")
+            img_file = st.camera_input("")
+            if img_file is not None:
+                try:
+                    pil_img = Image.open(img_file).convert("RGB")
+                    frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                    st.session_state.first_frame = frame
+                    st.session_state.state = "ROI_SELECTION"
+                except Exception as e:
+                    st.error(f"No se pudo procesar la foto: {e}")
+                    return
+    
+            if st.session_state.state == "ROI_SELECTION" and st.session_state.first_frame is not None:
+                st.markdown("---")
+                st.image(
+                    cv2.cvtColor(st.session_state.first_frame, cv2.COLOR_BGR2RGB),
+                    caption="Imagen capturada",
+                    use_container_width=True
+                )
             
-            if st.session_state.state == "CAMERA_ACTIVE":
-                if st.button("📸 1. Tomar Foto (Congelar)", type="primary"):
-                    if st.session_state.live_frame is not None:
-                        # 1. Spinner de espera al tomar la foto
-                        with st.spinner("Procesando... Capturando fotograma"):
-                            st.session_state.first_frame = st.session_state.live_frame.copy()
-                            st.session_state.state = "ROI_SELECTION"
-                            if st.session_state.cap: st.session_state.cap.release()
-                            st.session_state.cap = None 
-                        st.rerun()
-                    else:
-                        status_text.warning("Espera a que el stream de la cámara se inicialice.")
-
-                status_text.info("Cámara activa automáticamente. Presiona 'Tomar Foto' sobre el objeto plano.")
-                
-                cap = st.session_state.cap
-                
-                while st.session_state.state == "CAMERA_ACTIVE" and cap and cap.isOpened():
-                    img_file = st.camera_input("Toma una foto")
-                    
-                    if img_file is not None:
-                        cap = Image.open(img_file)
-                        st.image(cap, caption="Imagen capturada", use_container_width=True)
-
-                    ret, frame = cap.read()
-
-                    if not ret: 
-                        status_text.error("Error de cámara. Intente Reiniciar Todo.")
-                        st.session_state.state = "INIT"
-                        break
-                    
-                    frame = cv2.resize(frame, None, fx=tracker.scaling_factor, fy=tracker.scaling_factor, interpolation=cv2.INTER_AREA)
-                    st.session_state.live_frame = frame 
-                    FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), caption="Cámara en Vivo")
-                    sleep(0.01)
-                
-                if st.session_state.state == "CAMERA_ACTIVE":
-                    st.session_state.state = "INIT"
-                    st.session_state.cap = None
-                    st.rerun()
+           # st.session_state.state = "INIT"
 
 
         elif st.session_state.source_type == "IMAGE":
@@ -2145,6 +2117,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
