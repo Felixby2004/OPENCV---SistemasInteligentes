@@ -1264,12 +1264,10 @@ def capitulo8():
         ret, frame = cap.read() 
         if not ret:
             return None, False
-            
-        frame = cv2.resize(frame, None, fx=scaling_factor, 
-                            fy=scaling_factor, interpolation=cv2.INTER_AREA) 
+        frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA) 
         return frame, True
 
-    # --- Encabezado e información ---
+    # --- Encabezado ---
     st.markdown(
         """
         <div class="chapter-box">
@@ -1305,25 +1303,18 @@ def capitulo8():
             unsafe_allow_html=True
         )
     
-    # --- Subida de video ---
     uploaded_file = st.file_uploader("📹 Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
 
     if uploaded_file is not None:
-        scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.1, 0.3, 0.5, 0.6)
+        scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
     else:
         st.info("Sube un video para iniciar la detección de movimiento.")
         return
 
     st.markdown("---")
-    
-    # Procesamiento
-    temp_file_path = None
-    cap = None
-    FRAME_WINDOW_CUR = None
-    FRAME_WINDOW_DIFF = None
 
     try:
-        # Guardar archivo temporalmente
+        # Guardar el video subido
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_file.read())
         tfile.close()
@@ -1331,45 +1322,73 @@ def capitulo8():
         
         cap = cv2.VideoCapture(temp_file_path)
         if not cap.isOpened():
-            st.error("No se pudo abrir el archivo de video. Verifica el formato o inténtalo nuevamente.")
+            st.error("No se pudo abrir el archivo de video.")
             return
-        
+
+        # Configurar salida
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        output_path = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4").name
+        fps = int(cap.get(cv2.CAP_PROP_FPS)) or 20
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) * scaling_factor)
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) * scaling_factor)
+        out = cv2.VideoWriter(output_path, fourcc, fps // 3, (width, height))  # reducir fps para aligerar
+
         st.markdown("### 🎞️ Fuente Actual (Grises)")
         FRAME_WINDOW_CUR = st.empty()
         st.markdown("---")
         st.markdown("### 🔍 Resultado de Detección de Movimiento")
         FRAME_WINDOW_DIFF = st.empty()
-            
-        prev_frame, cur_frame, next_frame = None, None, None
         
-        # Bucle de procesamiento
+        prev_frame, cur_frame, next_frame = None, None, None
+        frame_count = 0
+
         while cap.isOpened():
             frame_bgr, ret = get_frame(cap, scaling_factor)
             if not ret:
                 break
-                
-            prev_frame = cur_frame 
+
+            frame_count += 1
+            # Saltar frames para optimizar velocidad en Streamlit Cloud
+            if frame_count % 3 != 0:
+                continue
+
+            prev_frame = cur_frame
             cur_frame = next_frame
             next_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-            
+
             if prev_frame is not None and cur_frame is not None:
                 diff_img = frame_diff(prev_frame, cur_frame, next_frame)
                 _, diff_img_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
-                
+
                 cur_frame_rgb = cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB)
                 diff_img_rgb = cv2.cvtColor(diff_img_thresh, cv2.COLOR_GRAY2RGB)
 
                 FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB")
                 FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB")
 
+                # Guardar frame procesado en el video
+                out.write(diff_img_rgb)
+
         cap.release()
-        st.success("✅ Procesamiento finalizado correctamente.")
+        out.release()
+        
+        with open(output_path, "rb") as f:
+            st.download_button(
+                label="Descargar video procesado",
+                data=f,
+                file_name="seguimiento_procesado.mp4",
+                mime="video/mp4"
+            )
+
     except Exception as e:
         st.error(f"Ocurrió un error durante el procesamiento del video: {e}")
+
     finally:
-        if cap is not None:
+        if 'cap' in locals() and cap:
             cap.release()
-        if temp_file_path and os.path.exists(temp_file_path):
+        if 'out' in locals() and out:
+            out.release()
+        if os.path.exists(temp_file_path):
             os.unlink(temp_file_path)
 
 
@@ -2075,6 +2094,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
