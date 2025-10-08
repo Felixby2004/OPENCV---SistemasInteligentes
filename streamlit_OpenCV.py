@@ -1928,7 +1928,6 @@ def capitulo10():
 
 
 def capitulo11():
-    st.write("Versión de OpenCV:", cv2.__version__)
     try:
         import create_features as cf
     except ImportError:
@@ -2077,7 +2076,6 @@ def capitulo11():
             unsafe_allow_html=True
         )
 
-
     try:
         classifier = StreamlitImageClassifier()
     except FileNotFoundError as e:
@@ -2090,73 +2088,51 @@ def capitulo11():
     
     if uploaded_file is not None:
         # Mostrar la imagen subida
-        st.image(uploaded_file, caption='Imagen de Entrada')
+        pil_img = Image.open(uploaded_file).convert("RGB")
+    
+        # Mostrar la imagen subida
+        st.image(pil_img, caption='Imagen de Entrada')
         st.markdown("---")
         
         if st.button("✨ **Clasificar Imagen**", type="primary"):
             with st.spinner("Procesando..."):
                 try:
-                    pil_img = Image.open(uploaded_file).convert("RGB")
-                
-                    # 2. Convertir la imagen PIL (RGB) a un array de NumPy (RGB)
+                    # 2. Convertir PIL.Image a NumPy array (RGB)
                     numpy_img_rgb = np.array(pil_img)
                     
-                    # 3. Convertir de RGB a BGR (formato nativo de OpenCV)
-                    # Este es el formato final que tu clasificador espera para cv2.imread()
+                    # 3. Convertir de RGB a BGR para OpenCV
                     input_img = cv2.cvtColor(numpy_img_rgb, cv2.COLOR_RGB2BGR)
-
-                    # Parche universal para compatibilidad SIFT / ORB (sin SURF)
+                    
+                    # --- Compatibilidad SIFT / ORB ---
                     try:
-                        # Versión moderna de SIFT (OpenCV >= 4.4)
                         sift_test = cv2.SIFT_create
                     except AttributeError:
                         try:
-                            # Compatibilidad con versiones antiguas
                             sift_test = cv2.xfeatures2d.SIFT_create
                         except AttributeError:
-                            # Si SIFT no está disponible, usar ORB como alternativa libre
                             def sift_test():
                                 return cv2.ORB_create()
                             st.warning("SIFT no disponible — se usará ORB en su lugar.")
                     
-                    # Inyectar compatibilidad general (solo SIFT, sin SURF)
                     import types
                     cv2.SIFT_create = sift_test
                     if not hasattr(cv2, "xfeatures2d"):
                         cv2.xfeatures2d = types.SimpleNamespace(SIFT_create=sift_test)
-
-                    # Inyectar compatibilidad para ambos namespaces
                     cv2.SURF_create = sift_test
-                    if not hasattr(cv2, "xfeatures2d"):
-                        import types
-                        cv2.xfeatures2d = types.SimpleNamespace(SURF_create=sift_test)
-                    
-                    # Ahora recibe la etiqueta y las probabilidades
+    
+                    # Clasificación
                     tag, probabilities = classifier.get_image_tag(input_img)
-                    
-                    # Obtener las etiquetas de clase
-                    clases = classifier.le.classes_ 
-                    
-                    # Mapear los nombres de clase a las probabilidades
-                    # Multiplicamos por 100 para obtener porcentajes
+                    clases = classifier.le.classes_
                     prob_percent = (probabilities * 100).round(2)
                     puntuaciones = dict(zip(clases, prob_percent))
-
-                    # Mostrar el resultado principal
+    
+                    # Mostrar resultados
                     st.success("✅ **Clasificación Terminada**")
                     st.subheader(f"Clase Predicha: **{tag}**")
-
-                    # --- Mostrar Probabilidades/Porcentajes ---
                     st.markdown("### Probabilidades de Clase")
-                    st.info("La función Softmax convierte la salida de la ANN en un porcentaje de probabilidad. Los porcentajes suman 100%.")
-                    
-                    # Crear y mostrar el DataFrame con los porcentajes
-                    data = {'Clase': clases, 'Probabilidad (%)': prob_percent}
-                    st.dataframe(data, hide_index=True)
-
-                    # Opcional: Mostrar como barras
+                    st.dataframe({'Clase': clases, 'Probabilidad (%)': prob_percent}, hide_index=True)
                     st.bar_chart(puntuaciones)
-
+    
                 except Exception as e:
                     st.error(f"Error durante el procesamiento o clasificación: {e}")
                     st.info("Verifica que los archivos de modelo sean compatibles.")
@@ -2169,6 +2145,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
