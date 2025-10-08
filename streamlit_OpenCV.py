@@ -538,6 +538,14 @@ def capitulo3():
             st.error("No se encontró 'road.jpg'")
     
     elif opcion == "📷 Usar cámara":
+        def get_available_camera(max_cams=3):
+            """Prueba cámaras del 0 al max_cams-1 y devuelve el índice de la primera disponible."""
+            for i in range(max_cams):
+                cap = cv2.VideoCapture(i)
+                if cap.isOpened():
+                    return cap
+            return None
+        
         ksize = st.select_slider(
             "👀 Tamaño del filtro (ksize)",
             options=[1,3,5,7,9,11,13,15,17],
@@ -548,7 +556,7 @@ def capitulo3():
         
         # Botón para iniciar la cámara
         if st.button("▶️ Iniciar cámara"):
-            cap = cv2.VideoCapture(0)
+            cap = get_available_camera(max_cams=5)
         
             if not cap.isOpened():
                 st.error("⚠️ No se pudo abrir la cámara.")
@@ -2146,6 +2154,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
