@@ -6,7 +6,7 @@ pillow<11,>=9.0
 scipy==1.16.2
 scikit-learn==1.7.2
 attrs==25.3.0
-opencv-contrib-python==4.10.0.84
+opencv-contrib-python>=4.5.5
 streamlit-webrtc
 aiortc
 av
