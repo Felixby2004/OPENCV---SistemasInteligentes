@@ -16,7 +16,7 @@ from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
 from av import VideoFrame
 
 st.set_page_config(
-    page_title="Detección de Rostros",
+    page_title="OpenCV + StreamLit - CVFA",
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -2096,6 +2096,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
