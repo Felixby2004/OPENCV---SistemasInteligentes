@@ -1852,7 +1852,7 @@ def capitulo10():
         frame = st.session_state.first_frame.copy()
         h, w = frame.shape[:2]
 
-        status_text.info("Paso 2: Ajusta el ROI (rectángulo) sobre el objeto plano.")
+        status_text.info("Ajusta el ROI (rectángulo) sobre el objeto plano.")
         
         if st.button("⏪ Reiniciar Foto/Cambiar Fuente", key='reset_foto'):
             st.session_state.first_frame = None
@@ -1890,7 +1890,7 @@ def capitulo10():
         
         current_rect = (x, y, rect_w, rect_h)
         
-        if st.button("🎯 3. CONFIRMAR ROI e INICIAR PROYECCIÓN", type="primary"):
+        if st.button("🎯 CONFIRMAR ROI e INICIAR PROYECCIÓN", type="primary"):
             if rect_w > 10 and rect_h > 10:
                 # 3. Spinner de espera al iniciar la proyección
                 with st.spinner("Procesando... Calculando pose 3D"):
@@ -1925,7 +1925,7 @@ def capitulo10():
                 cv2.polylines(img_display, [np.int32(item.quad)], True, (0, 255, 0), 2) 
                 tracker.overlay_obj_graphics(img_display, item)
         else:
-            status_text.error("⚠️ Error de Proyección. El ROI seleccionado puede ser inválido o muy pequeño.")
+            status_text.error("Error de Proyección. El ROI seleccionado puede ser inválido o muy pequeño.")
             
         FRAME_WINDOW.image(cv2.cvtColor(img_display, cv2.COLOR_BGR2RGB), caption="Realidad Aumentada Proyectada")
 
@@ -2145,6 +2145,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
