@@ -2087,53 +2087,50 @@ def capitulo11():
     uploaded_file = st.file_uploader("📂 Sube tu imagen", type=["png","jpg","jpeg"])
     if uploaded_file is not None:
         try:
-            # Abrir directamente el UploadedFile
+            # Intentamos abrir la imagen
             pil_img = Image.open(uploaded_file).convert("RGB")
-            except Exception as e:
-                st.error(f"No se pudo abrir la imagen: {e}")
-            else:
-                st.image(pil_img, caption="Imagen de Entrada")
-                st.markdown("---")
-        
-                if st.button("✨ **Clasificar Imagen**"):
-                    with st.spinner("Procesando..."):
+            st.image(pil_img, caption="Imagen de Entrada")
+            st.markdown("---")
+            
+            if st.button("✨ Clasificar Imagen"):
+                with st.spinner("Procesando..."):
+                    try:
+                        # Convertir a NumPy BGR para OpenCV
+                        input_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+                
+                        # Compatibilidad SIFT / ORB
                         try:
-                            # Convertir a NumPy BGR para OpenCV
-                            input_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-                    
-                            # Compatibilidad SIFT / ORB
+                            sift_test = cv2.SIFT_create
+                        except AttributeError:
                             try:
-                                sift_test = cv2.SIFT_create
+                                sift_test = cv2.xfeatures2d.SIFT_create
                             except AttributeError:
-                                try:
-                                    sift_test = cv2.xfeatures2d.SIFT_create
-                                except AttributeError:
-                                    def sift_test():
-                                        return cv2.ORB_create()
-                                    st.warning("SIFT no disponible — se usará ORB en su lugar.")
-                    
-                            # Inyectar compatibilidad
-                            cv2.SIFT_create = sift_test
-                            if not hasattr(cv2, "xfeatures2d"):
-                                cv2.xfeatures2d = types.SimpleNamespace(SIFT_create=sift_test)
-                            cv2.SURF_create = sift_test
-                    
-                            # Clasificación
-                            tag, probabilities = classifier.get_image_tag(input_img)
-                            clases = classifier.le.classes_
-                            prob_percent = (probabilities * 100).round(2)
-                            puntuaciones = dict(zip(clases, prob_percent))
-                    
-                            # Mostrar resultados
-                            st.success("✅ **Clasificación Terminada**")
-                            st.subheader(f"Clase Predicha: **{tag}**")
-                            st.markdown("### Probabilidades de Clase")
-                            st.dataframe({'Clase': clases, 'Probabilidad (%)': prob_percent}, hide_index=True)
-                            st.bar_chart(puntuaciones)
-                    
-                        except Exception as e:
-                            st.error(f"Error durante el procesamiento o clasificación: {e}")
-                            st.info("Verifica que los archivos de modelo sean compatibles.")
+                                def sift_test():
+                                    return cv2.ORB_create()
+                                st.warning("SIFT no disponible — se usará ORB en su lugar.")
+                
+                        # Inyectar compatibilidad
+                        cv2.SIFT_create = sift_test
+                        if not hasattr(cv2, "xfeatures2d"):
+                            cv2.xfeatures2d = types.SimpleNamespace(SIFT_create=sift_test)
+                        cv2.SURF_create = sift_test
+                
+                        # Clasificación
+                        tag, probabilities = classifier.get_image_tag(input_img)
+                        clases = classifier.le.classes_
+                        prob_percent = (probabilities * 100).round(2)
+                        puntuaciones = dict(zip(clases, prob_percent))
+                
+                        # Mostrar resultados
+                        st.success("✅ **Clasificación Terminada**")
+                        st.subheader(f"Clase Predicha: **{tag}**")
+                        st.markdown("### Probabilidades de Clase")
+                        st.dataframe({'Clase': clases, 'Probabilidad (%)': prob_percent}, hide_index=True)
+                        st.bar_chart(puntuaciones)
+                
+                    except Exception as e:
+                        st.error(f"Error durante el procesamiento o clasificación: {e}")
+                        st.info("Verifica que los archivos de modelo sean compatibles.")
 
         except Exception:
             st.warning(
@@ -2147,6 +2144,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
