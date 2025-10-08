@@ -11,6 +11,7 @@ from time import sleep
 import _pickle as pickle
 from scipy.special import softmax
 from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+from av import VideoFrame
 
 st.set_page_config(
     page_title="Detección de Rostros",
@@ -723,7 +724,7 @@ def capitulo4():
     # 4. Iniciamos el stream
     webrtc_streamer(
         key="face-detector",
-        video_transformer_factory=FaceDetector,
+        video_processor_factory=transformer_factory,  # ✅ reemplazado
         media_stream_constraints={"video": True, "audio": False},
     )
 
@@ -2160,6 +2161,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
