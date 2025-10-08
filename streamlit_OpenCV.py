@@ -1779,9 +1779,7 @@ def capitulo10():
     if st.session_state.state == "INIT" or st.session_state.state == "CAMERA_ACTIVE":
         
         if st.session_state.source_type == "CAMERA":
-            if st.session_state.state == "INIT":
-                img_file = st.camera_input("")
-                st.session_state.state = "CAMERA_ACTIVE"
+            img_file = st.camera_input("")
         
             if img_file is not None:
                 try:
@@ -2109,6 +2107,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
