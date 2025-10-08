@@ -26,6 +26,15 @@ opciones = [
     'Capítulo 11 - Machine Learning por una Red Neuronal Artificial',
 ]
 
+# Usar el selectbox para actualizar el estado de la página
+selected_chapter = st.sidebar.selectbox(
+    " ", 
+    opciones,
+    key="chapter_selector",
+    # Cuando el valor cambia, actualiza el estado de la sesión
+    on_change=lambda: st.session_state.__setitem__('page', st.session_state.chapter_selector)
+)
+
 # --- Configuración Inicial ---
 st.set_page_config(layout="centered", initial_sidebar_state="collapsed")
 
@@ -2090,4 +2099,5 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
