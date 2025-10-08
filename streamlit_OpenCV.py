@@ -1309,7 +1309,7 @@ def capitulo8():
     uploaded_file = st.file_uploader("📹 Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
 
     if uploaded_file is not None:
-        scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
+        scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.1, 0.3, 0.5, 0.6)
     else:
         st.info("Sube un video para iniciar la detección de movimiento.")
         return
@@ -2075,6 +2075,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
