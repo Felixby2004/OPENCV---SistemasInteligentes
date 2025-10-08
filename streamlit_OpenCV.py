@@ -538,12 +538,15 @@ def capitulo3():
             st.error("No se encontró 'road.jpg'")
     
     elif opcion == "📷 Usar cámara":
-        def get_available_camera(max_cams=3):
-            """Prueba cámaras del 0 al max_cams-1 y devuelve el índice de la primera disponible."""
+        def get_available_camera(max_cams=5):
+            """Prueba cámaras del 0 al max_cams-1 y devuelve la primera disponible o None."""
             for i in range(max_cams):
                 cap = cv2.VideoCapture(i)
-                if cap.isOpened():
+                if cap is not None and cap.isOpened():
                     return cap
+                else:
+                    if cap is not None:
+                        cap.release()
             return None
         
         ksize = st.select_slider(
@@ -553,36 +556,27 @@ def capitulo3():
         )
         
         FRAME_WINDOW = st.empty()
+
+        cap = get_available_camera(max_cams=5)
         
-        # Botón para iniciar la cámara
-        if st.button("▶️ Iniciar cámara"):
-            cap = get_available_camera(max_cams=5)
-        
-            if not cap.isOpened():
-                st.error("⚠️ No se pudo abrir la cámara.")
-            else:
-                try:
-                    while True:
-                        ret, frame = cap.read()
-                        if not ret:
-                            st.warning("⚠️ No se pudo capturar el frame.")
-                            break
-        
-                        # Aplicar caricaturización
-                        cartoon_frame = cartoonize_image(frame, ksize=ksize)
-        
-                        # Combinar original y caricatura lado a lado
-                        combined = np.hstack([
-                            cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                            cv2.cvtColor(cartoon_frame, cv2.COLOR_BGR2RGB)
-                        ])
-        
-                        FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
-        
-                except st.script_runner.StopException:
-                    pass
-                finally:
-                    cap.release()
+        if cap is None:
+            st.error("No se pudo encontrar ninguna cámara disponible.")
+        else:
+            # Aquí sí puedes usar cap.isOpened() con seguridad
+            try:
+                while True:
+                    ret, frame = cap.read()
+                    if not ret:
+                        st.warning("⚠️ No se pudo capturar el frame.")
+                        break
+                    cartoon_frame = cartoonize_image(frame, ksize=ksize)
+                    combined = np.hstack([
+                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                        cv2.cvtColor(cartoon_frame, cv2.COLOR_BGR2RGB)
+                    ])
+                    FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
+            finally:
+                cap.release()
 
 
 def capitulo4():
@@ -2154,6 +2148,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
