@@ -660,17 +660,24 @@ class ARFaceOverlayTransformer(VideoTransformerBase):
              raise RuntimeError("Recursos de RA no disponibles.")
     
     def transform(self, frame):
-        frame = frame.to_ndarray(format="bgr")
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_bgr = frame.to_ndarray(format="bgr")
+        RESIZE_SCALE = 0.5 
         
         if self.frame_count % self.DETECTION_INTERVAL == 0:
-            # Ejecuta la detección solo si el contador es múltiplo del intervalo
-            self.face_rects = self.face_cascade.detectMultiScale(
+            
+            # Solo si usas RESIZE_SCALE: Redimensionar antes de la detección
+            small_frame = cv2.resize(frame_bgr, (0, 0), fx=RESIZE_SCALE, fy=RESIZE_SCALE)
+            gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+
+            # Detectar en el frame pequeño
+            face_rects_small = self.face_cascade.detectMultiScale(
                 gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
             )
-            self.frame_count = 0 # Resetear el contador después de detectar
-
-        # Incrementar el contador
+            
+            # Escalar las coordenadas detectadas al tamaño original (CRÍTICO)
+            self.face_rects = (face_rects_small / RESIZE_SCALE).astype(int)
+            self.frame_count = 0
+            
         self.frame_count += 1
         
         # 2. Superposición (SIEMPRE se ejecuta)
@@ -681,11 +688,11 @@ class ARFaceOverlayTransformer(VideoTransformerBase):
             glasses_x = x - int(w * 0.10)
             glasses_y = y + int(h * 0.25)
             
-            frame = self.overlay_func(
+            frame_bgr = self.overlay_func(
                 self.glasses_img, frame, glasses_x, glasses_y, glasses_w, glasses_h
             )
 
-        return frame
+        return frame_bgr
 
 
 def capitulo4():        
@@ -2156,6 +2163,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
