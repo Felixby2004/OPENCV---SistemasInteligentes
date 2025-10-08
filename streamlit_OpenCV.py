@@ -1257,29 +1257,6 @@ def capitulo8():
         <div class="chapter-box">
             <div class="chapter-title">Capítulo 8 - Seguimiento de objetos</div>
             <p>
-                También llamado <b>Object Tracking</b>, es un proceso crucial en la visión por computadora que se centra en localizar la posición de un objeto de interés en una secuencia de video a lo largo del tiempo, manteniendo su identidad a medida que se mueve o cambia.<br>
-                Aquí aplicamos detección de movimiento mediante diferencias de fotogramas.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # --- Funciones internas ---
-    import streamlit as st
-import cv2
-import tempfile
-import os
-import numpy as np
-from PIL import Image
-from time import sleep
-
-def capitulo8():
-    st.markdown(
-        """
-        <div class="chapter-box">
-            <div class="chapter-title">Capítulo 8 - Seguimiento de objetos</div>
-            <p>
                 Este módulo aplica detección de movimiento simulando una grabación con cámara o cargando un video.
             </p>
         </div>
@@ -1287,7 +1264,7 @@ def capitulo8():
         unsafe_allow_html=True
     )
 
-    opcion = st.radio("Selecciona una opción:", ["📷 Activar Cámara", "📹 Subir Video"])
+    opcion = st.radio("Selecciona una opción:", ["📷 Grabar con Cámara", "📹 Subir Video"])
 
     def frame_diff(prev_frame, cur_frame, next_frame):
         diff_frames1 = cv2.absdiff(next_frame, cur_frame)
@@ -1296,7 +1273,7 @@ def capitulo8():
 
     def procesar_frames(frames, scaling_factor):
         if len(frames) < 3:
-            st.warning("Se necesitan al menos 3 imágenes para el seguimiento.")
+            st.warning("No se capturaron suficientes frames para analizar el movimiento.")
             return
 
         FRAME_WINDOW_CUR = st.empty()
@@ -1314,20 +1291,22 @@ def capitulo8():
             FRAME_WINDOW_DIFF.image(diff_img_thresh, channels="GRAY", caption="Movimiento Detectado")
 
             prev_frame, cur_frame = cur_frame, next_frame
-            sleep(0.3)
+            time.sleep(0.2)
 
+        st.success("✅ Procesamiento finalizado correctamente.")
+
+    scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
+
+    # --- Subida de video existente ---
     if opcion == "📹 Subir Video":
-        uploaded_file = st.file_uploader("Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
-        scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
-
+        uploaded_file = st.file_uploader("Sube un video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
         if uploaded_file is not None:
             try:
                 tfile = tempfile.NamedTemporaryFile(delete=False)
                 tfile.write(uploaded_file.read())
                 tfile.close()
-                temp_path = tfile.name
 
-                cap = cv2.VideoCapture(temp_path)
+                cap = cv2.VideoCapture(tfile.name)
                 frames = []
 
                 while True:
@@ -1341,40 +1320,44 @@ def capitulo8():
                 procesar_frames(frames, scaling_factor)
 
             except Exception as e:
-                st.error(f"Error procesando el video: {e}")
+                st.error(f"Ocurrió un error procesando el video: {e}")
             finally:
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
+                os.unlink(tfile.name)
 
+    # --- Grabación automática desde la cámara ---
     else:
-        scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
-
-        if "frames" not in st.session_state:
+        if "recording" not in st.session_state:
+            st.session_state.recording = False
             st.session_state.frames = []
 
-        st.write("📸 Captura varias imágenes para simular un video.")
+        FRAME_WINDOW = st.empty()
 
-        img = st.camera_input("Toma una foto")
+        if not st.session_state.recording:
+            if st.button("▶️ Iniciar Grabación"):
+                st.session_state.recording = True
+                st.session_state.frames = []
+                st.rerun()
+        else:
+            img_file = st.camera_input("Grabando... (se capturan frames automáticamente)")
+            FRAME_WINDOW.info("📸 Grabando frames... Presiona 'Detener y Procesar' cuando termines.")
 
-        if img is not None:
-            try:
-                frame = np.array(Image.open(img))
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                st.session_state.frames.append(frame)
-                st.success(f"✅ Frame {len(st.session_state.frames)} capturado correctamente.")
-            except Exception as e:
-                st.warning(f"No se pudo procesar la imagen: {e}")
+            if img_file is not None:
+                try:
+                    frame = np.array(Image.open(img_file))
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+                    st.session_state.frames.append(frame)
+                    st.success(f"Frame {len(st.session_state.frames)} capturado automáticamente.")
+                except Exception:
+                    st.warning("No se pudo procesar este frame.")
 
-        if st.button("▶️ Procesar grabación simulada"):
-            if len(st.session_state.frames) > 2:
-                st.info("Procesando frames capturados...")
-                procesar_frames(st.session_state.frames, scaling_factor)
-            else:
-                st.warning("Debes capturar al menos 3 imágenes antes de procesar.")
-
-        if st.button("🗑️ Reiniciar capturas"):
-            st.session_state.frames = []
-            st.info("Las capturas fueron reiniciadas.")
+            if st.button("⏹️ Detener y Procesar"):
+                st.session_state.recording = False
+                if len(st.session_state.frames) >= 3:
+                    procesar_frames(st.session_state.frames, scaling_factor)
+                else:
+                    st.warning("No se capturaron suficientes frames.")
+                st.session_state.frames = []
 
 
 def capitulo9():
@@ -2079,6 +2062,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
