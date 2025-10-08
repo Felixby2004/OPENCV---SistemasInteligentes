@@ -568,60 +568,64 @@ def capitulo3():
 
 
 def capitulo4():
-    def overlay_image_alpha(lentes, frame, x, y, w, h):
-        # Redimensionar la imagen de los lentes al tamaño de la zona deseada
-        lentes_resized = cv2.resize(lentes, (w, h), interpolation=cv2.INTER_AREA)
-
-        # Coordenadas de la Región de Interés (ROI) en el fotograma
-        y1, y2 = y, y + h
-        x1, x2 = x, x + w
-
-        # Verificar que las coordenadas no excedan los límites del fotograma
-        if y1 < 0: lentes_resized = lentes_resized[abs(y1):, :] ; y1 = 0
-        if x1 < 0: lentes_resized = lentes_resized[:, abs(x1):] ; x1 = 0
-        if y2 > frame.shape[0]: lentes_resized = lentes_resized[:-(y2 - frame.shape[0]), :] ; y2 = frame.shape[0]
-        if x2 > frame.shape[1]: lentes_resized = lentes_resized[:, :-(x2 - frame.shape[1])] ; x2 = frame.shape[1]
-
-        # Recalcular alto y ancho después del recorte por límites
-        h_new, w_new = lentes_resized.shape[:2]
-        
-        # Si la imagen de lentes no tiene canal alfa, no podemos superponer con transparencia
-        if lentes_resized.shape[2] < 4:
-            frame[y1:y2, x1:x2] = lentes_resized
+    face_cascade_global, eye_cascade_global, glasses_img_global = None, None, None
+    try:
+        # Llama a tu función de carga de recursos UNA VEZ
+        face_cascade_global, eye_cascade_global, glasses_img_global = load_resources()
+    except Exception as e:
+        # Si hay un error de recursos, Streamlit lo mostrará de todas formas.
+        pass
+    
+    # =========================================================
+    # --- CLASE DE PROCESAMIENTO DE VIDEO EN VIVO (WEB RTC) ---
+    # =========================================================
+    
+    class ARFaceOverlayTransformer(VideoTransformerBase):
+        """
+        Procesa cada fotograma usando la detección de rostro y la función global 
+        de superposición con canal alfa.
+        """
+        def __init__(self, face_cascade, glasses_img, overlay_func):
+            self.face_cascade = face_cascade
+            self.glasses_img = glasses_img
+            self.overlay_func = overlay_func # La función global overlay_image_alpha
+    
+            if self.face_cascade is None or self.glasses_img is None:
+                # Aquí manejamos el error si load_resources falló
+                st.error("Error crítico: Recursos (cascadas o lentes) no cargados correctamente.")
+                raise RuntimeError("Recursos de RA no disponibles.")
+    
+    
+        def transform(self, frame):
+            # 1. Convertir el frame a un array de NumPy (BGR)
+            frame = frame.to_ndarray(format="bgr")
+            
+            # 2. Convertir a escala de grises para la detección
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+            # 3. Detectar caras
+            # Usamos el clasificador Haar que cargaste con load_resources
+            face_rects = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+            # 4. Superponer lentes en cada cara detectada
+            for (x, y, w, h) in face_rects:
+                # Cálculos de posición y tamaño
+                glasses_w = int(w * 1.2)
+                glasses_h = int(h * 0.4)
+                glasses_x = x - int(w * 0.10)
+                glasses_y = y + int(h * 0.25) 
+                
+                # 5. Superponer usando tu función global:
+                # Los argumentos deben coincidir con tu def overlay_image_alpha(lentes, frame, x, y, w, h):
+                frame = self.overlay_func(
+                    self.glasses_img, # Los lentes cargados con load_resources
+                    frame,
+                    glasses_x, glasses_y, glasses_w, glasses_h
+                )
+    
+            # 6. Devuelve el frame procesado (NumPy array BGR)
             return frame
 
-        # Extraer el canal alfa (transparencia) y su inverso
-        alpha_s = lentes_resized[:, :, 3] / 255.0
-        alpha_l = 1.0 - alpha_s
-
-        # Tomar solo los canales BGR de los lentes
-        lentes_bgr = lentes_resized[:, :, :3]
-        
-        # Crear la ROI del fotograma para la superposición
-        roi = frame[y1:y2, x1:x2]
-
-        # Superposición: (Lentes * Alfa) + (Fondo * (1 - Alfa))
-        for c in range(0, 3):
-            frame[y1:y2, x1:x2, c] = (alpha_s * lentes_bgr[:, :, c] +
-                                    alpha_l * roi[:, :, c])
-        return frame
-    
-    def load_resources():
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
-        
-        # Cargar la imagen de los lentes (debe ser PNG con canal alfa/transparencia)
-        try:
-            # Asegúrate de tener 'glasses.png' en el mismo directorio.
-            glasses_img = cv2.imread('sunglasses.png', cv2.IMREAD_UNCHANGED)
-            if glasses_img is None or face_cascade.empty() or eye_cascade.empty():
-                st.error("Error: Asegúrate de que 'sunglasses.png' y los archivos 'haarcascade' estén en la ruta correcta.")
-                return None, None, None
-        except Exception as e:
-            st.error(f"Error al cargar recursos: {e}")
-            return None, None, None
-            
-        return face_cascade, eye_cascade, glasses_img
     
     st.markdown(
         """
@@ -632,76 +636,37 @@ def capitulo4():
         """,
         unsafe_allow_html=True
     )
+    
+    global face_cascade_global, glasses_img_global # Usamos los recursos globales
+    
+    # Comprobación de si los recursos se cargaron
+    if face_cascade_global is None or glasses_img_global is None:
+        st.error("No se puede iniciar el stream de RA. Verifica que 'sunglasses.png' y los archivos 'haarcascade' se hayan cargado correctamente al inicio del script.")
+        return
 
-    # Función para cargar recursos una sola vez (caché de Streamlit)
+    st.info("Activa la cámara en el cuadro de abajo. Esto funciona usando WebRTC, permitiendo el stream de video continuo en Streamlit Cloud.")
 
-    face_cascade, eye_cascade, glasses_img = load_resources()
+    # 1. Creamos la función fábrica que inicializa el transformador
+    # Pasamos los recursos cargados y la función de superposición
+    transformer_factory = lambda: ARFaceOverlayTransformer(
+        face_cascade=face_cascade_global,
+        glasses_img=glasses_img_global,
+        # Usamos la función overlay_image_alpha tal cual la definiste
+        overlay_func=overlay_image_alpha 
+    )
 
-    # Salir si no se cargaron los recursos
-    if face_cascade is None:
-        st.stop()
-        
-    # Checkbox para iniciar/detener el stream de la cámara
-    run = st.checkbox('📷 Activar Cámara', value=True)
-    frame_placeholder = st.empty() # Contenedor para mostrar el video
+    # 2. Iniciamos el stream
+    webrtc_streamer(
+        key="superposicion_ra",
+        video_transformer_factory=transformer_factory,
+        rtc_configuration={
+            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
+        },
+        media_stream_constraints={"video": True, "audio": False},
+    )
 
-    if run:
-        img_file = st.camera_input("Toma una foto")
-
-        if img_file is not None:
-            cap = Image.open(img_file)
-            st.image(cap, caption="Imagen capturada", use_container_width=True)
-        
-        scaling_factor = 1
-        
-        if not cap.isOpened():
-            st.error("No se pudo acceder a la cámara. Revisa permisos o si otra app la usa.")
-            run = False # Detener el loop si hay error
-            
-        while run:
-            ret, frame = cap.read()
-            if not ret:
-                st.warning("No se pudo leer el fotograma de la cámara. Deteniendo.")
-                break
-
-            # Redimensionar el fotograma
-            frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-            
-            # Invertir el fotograma horizontalmente (efecto espejo, opcional)
-            frame = cv2.flip(frame, 1)
-
-            # Convertir a escala de grises para la detección (más rápido)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            # Detectar caras
-            face_rects = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
-            for (x, y, w, h) in face_rects:
-                # 1. Ajustar el tamaño y la posición para la superposición de lentes
-                # Esto se hace empíricamente. Puedes ajustar 1.4, 0.4, 0.1, 0.2, etc.
-                
-                # Dimensiones deseadas para los lentes: 120% del ancho de la cara, 40% de su alto.
-                glasses_w = int(w * 1.2)
-                glasses_h = int(h * 0.4)
-                
-                # Posición de inicio (esquina superior izquierda)
-                # Desplazamiento horizontal para centrar los lentes: -10% del ancho de la cara
-                glasses_x = x - int(w * 0.10)
-                # Desplazamiento vertical para la altura de los ojos: +25% del alto de la cara
-                glasses_y = y + int(h * 0.25) 
-
-                # 2. Superponer los lentes en el fotograma
-                frame = overlay_image_alpha(glasses_img, frame, glasses_x, glasses_y, glasses_w, glasses_h)
-
-            # Convertir el fotograma de BGR (OpenCV) a RGB (Streamlit)
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            
-            # Actualizar la imagen en la interfaz de Streamlit
-            frame_placeholder.image(frame_rgb, channels="RGB")
-
-        # Liberar la cámara cuando el loop se detiene
-        cap.release()
-        frame_placeholder.empty()
+    st.markdown("---")
+    st.warning("Recuerda que tu código ahora es **Video en Vivo**. El código antiguo con `st.camera_input` y `cap.read()` ya no es necesario.")
 
 
 def capitulo5():
@@ -2136,6 +2101,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
