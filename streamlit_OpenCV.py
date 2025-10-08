@@ -1359,8 +1359,8 @@ def capitulo8():
                 cur_frame_rgb = cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB)
                 diff_img_rgb = cv2.cvtColor(diff_img_thresh, cv2.COLOR_GRAY2RGB)
 
-                FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB", use_container_width=True)
-                FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB", use_container_width=True)
+                FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB")
+                FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB")
 
         cap.release()
         st.success("✅ Procesamiento finalizado correctamente.")
@@ -2075,6 +2075,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
