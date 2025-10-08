@@ -38,15 +38,6 @@ if 'page' not in st.session_state:
 st.sidebar.title("Índice")
 st.sidebar.write("Selecciona un encabezado:")
 
-# Usar el selectbox para actualizar el estado de la página
-selected_chapter = st.sidebar.selectbox(
-    " ", 
-    opciones,
-    key="chapter_selector",
-    # Cuando el valor cambia, actualiza el estado de la sesión
-    on_change=lambda: st.session_state.__setitem__('page', st.session_state.chapter_selector)
-)
-
 # --- CSS para la portada
 def estilos():
     """Aplica estilos CSS con fondo de gradiente morado, sidebar sólido, y acentos morados/ámbar."""
@@ -301,7 +292,7 @@ def capitulo1():
         img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
         # Conversión a RGB y luego a PIL para mostrar con Streamlit
         img_pil_color = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-        st.image(img_pil_color, caption="Imagen por defecto", use_container_width=True)
+        st.image(img_pil_color, caption="Imagen por defecto")
 
     rows, cols = img.shape
 
@@ -350,7 +341,7 @@ def capitulo1():
             else:
                 img_compuesta[i, j] = 0 # Borde negro
 
-    st.image(img_compuesta, caption=f"Imagen Modificada", use_container_width=True)
+    st.image(img_compuesta, caption=f"Imagen Modificada")
 
 
 def capitulo2():
@@ -407,7 +398,7 @@ def capitulo2():
         if archivo is not None:
             img_pil = Image.open(archivo).convert("RGB")
             img = np.array(img_pil)
-            st.image(img, caption="Imagen cargada", use_container_width=True)
+            st.image(img, caption="Imagen cargada")
         else:
             st.warning("Por favor, sube una imagen para continuar.")
             st.stop()
@@ -417,7 +408,7 @@ def capitulo2():
             st.error("No se encontró 'tree_input.jpg' en el directorio.")
             st.stop()
         img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        st.image(img, caption="Imagen por defecto", use_container_width=True)
+        st.image(img, caption="Imagen por defecto")
 
     st.subheader("⚙️ Controles de Kernel e Iteraciones")
     
@@ -445,12 +436,12 @@ def capitulo2():
     with col1:
         caption_erosion = f"Imagen con Erosión"
         st.markdown("**1. Erosión**", unsafe_allow_html=True)
-        st.image(img_erosion, caption=caption_erosion, use_container_width=True)
+        st.image(img_erosion, caption=caption_erosion)
 
     with col2:
         caption_dilation = f"Imagen con Dilatación"
         st.markdown("**2. Dilatación**", unsafe_allow_html=True)
-        st.image(img_dilation, caption=caption_dilation, use_container_width=True)
+        st.image(img_dilation, caption=caption_dilation)
 
     
 def capitulo3():
@@ -491,7 +482,7 @@ def capitulo3():
             img_cv = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
 
             # 1. Mostrar Imagen Original inmediatamente
-            st.image(cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB), caption="Imagen cargada", use_container_width=True)
+            st.image(cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB), caption="Imagen cargada")
             
             # 2. Mostrar Control (st.select_slider)
             ksize = st.select_slider(
@@ -505,7 +496,7 @@ def capitulo3():
             result = cartoonize_image(img_cv, ksize=ksize, sketch_mode=True)
             
             # SOLO se muestra el resultado
-            st.image(cv2.cvtColor(result, cv2.COLOR_BGR2RGB), caption="Resultado Cartoon/Sketch", use_container_width=True)
+            st.image(cv2.cvtColor(result, cv2.COLOR_BGR2RGB), caption="Resultado Cartoon/Sketch")
         else:
             st.warning("Sube una imagen para continuar.")
 
@@ -516,7 +507,7 @@ def capitulo3():
             
             # 1. Mostrar Imagen Original inmediatamente
             img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-            st.image(img_rgb, caption="Imagen por defecto", use_container_width=True)
+            st.image(img_rgb, caption="Imagen por defecto")
             
             # 2. Mostrar Control (st.select_slider)
             ksize = st.select_slider(
@@ -530,7 +521,7 @@ def capitulo3():
             result = cartoonize_image(img_bgr, ksize=ksize, sketch_mode=True)
             
             # SOLO se muestra el resultado
-            st.image(cv2.cvtColor(result, cv2.COLOR_BGR2RGB), caption="Resultado Cartoon/Sketch", use_container_width=True)
+            st.image(cv2.cvtColor(result, cv2.COLOR_BGR2RGB), caption="Resultado Cartoon/Sketch")
         else:
             st.error("No se encontró 'road.jpg'")
     
@@ -569,7 +560,7 @@ def capitulo3():
                     cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
                     cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
                 ])
-                FRAME_WINDOW.image(combined, use_container_width=True)
+                FRAME_WINDOW.image(combined)
             cap.release()
 
 
@@ -743,7 +734,7 @@ def capitulo5():
         if archivo is not None:
             img_pil = Image.open(archivo).convert("RGB")
             input_image_bgr = np.array(img_pil)
-            st.image(input_image_bgr, caption="Imagen cargada", use_container_width=True)
+            st.image(input_image_bgr, caption="Imagen cargada")
         else:
             st.warning("Por favor, sube una imagen para continuar.")
             st.stop()
@@ -753,7 +744,7 @@ def capitulo5():
             st.error("No se encontró 'tool.png' en el directorio.")
             st.stop()
         input_image_bgr = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        st.image(input_image_bgr, caption="Imagen por defecto", use_container_width=True)
+        st.image(input_image_bgr, caption="Imagen por defecto")
 
     st.subheader("🔍 Resultados")
 
@@ -799,11 +790,11 @@ def capitulo5():
         # --- VISUALIZACIÓN EN STREAMLIT ---
         st.subheader("Con Supresión No Máxima (NMS)")
         st.metric("Puntos Clave Detectados", len(keypoints_nms))
-        st.image(img_keypoints_with_nonmax_rgb, caption="FAST con NMS", use_container_width=True)
+        st.image(img_keypoints_with_nonmax_rgb, caption="FAST con NMS")
 
         st.subheader("Sin Supresión No Máxima (NMS)")
         st.metric("Puntos Clave Detectados", len(keypoints_nonms))
-        st.image(img_keypoints_without_nonmax_rgb, caption="FAST sin NMS", use_container_width=True)
+        st.image(img_keypoints_without_nonmax_rgb, caption="FAST sin NMS")
 
         st.info("La Supresión No Máxima (NMS) reduce los puntos clave agrupados a un solo punto más representativo, resultando en menos detecciones.")
 
@@ -1029,7 +1020,7 @@ def capitulo6():
     # Dibujar el rectángulo ROI (borde blanco)
     cv2.rectangle(img_with_points, tl_pt, br_pt, (255, 255, 255), 2)
     
-    st.image(cv2.cvtColor(img_with_points, cv2.COLOR_BGR2RGB), caption="Imagen con ROI (Región de Interés)", use_container_width=True)
+    st.image(cv2.cvtColor(img_with_points, cv2.COLOR_BGR2RGB), caption="Imagen con ROI (Región de Interés)")
     st.markdown("---")
 
     if st.button("🚀 Ejecutar Eliminación"):
@@ -1053,7 +1044,7 @@ def capitulo6():
         st.markdown("---")
         st.markdown("### 🔍 Resultados")
         
-        st.image(cv2.cvtColor(img_output, cv2.COLOR_BGR2RGB), caption="Objeto Eliminado y Fondo Recompuesto", use_container_width=True)
+        st.image(cv2.cvtColor(img_output, cv2.COLOR_BGR2RGB), caption="Objeto Eliminado y Fondo Recompuesto")
     
 
 def capitulo7():
@@ -1195,7 +1186,7 @@ def capitulo7():
     cv2.rectangle(img_with_points, (x_min, y_min), (x_max, y_max), (255, 255, 255), 2)
     
     # Mostrar la imagen con los puntos antes del botón
-    st.image(cv2.cvtColor(img_with_points, cv2.COLOR_BGR2RGB), caption="Imagen con Puntos de Referencia y ROI", use_container_width=True)
+    st.image(cv2.cvtColor(img_with_points, cv2.COLOR_BGR2RGB), caption="Imagen con Puntos de Referencia y ROI")
 
     if st.button("🚀 Ejecutar Segmentación"):
         # Coordenadas rect_coords para GrabCut (x_min, y_min, x_max, y_max)
@@ -1209,7 +1200,7 @@ def capitulo7():
             return
         
         st.subheader("🔍 Resultados")
-        st.image(cv2.cvtColor(img_segmented, cv2.COLOR_BGR2RGB), caption="Imagen Segmentada", use_container_width=True)
+        st.image(cv2.cvtColor(img_segmented, cv2.COLOR_BGR2RGB), caption="Imagen Segmentada")
         
 
 def capitulo8():
@@ -1346,8 +1337,8 @@ def capitulo8():
                     cur_frame_rgb = cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB)
                     diff_img_rgb = cv2.cvtColor(diff_img_thresh, cv2.COLOR_GRAY2RGB)
 
-                    FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB", use_container_width=True)
-                    FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB", use_container_width=True)
+                    FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB")
+                    FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB")
 
         except Exception as e:
             st.error(f"Ocurrió un error durante el procesamiento de video: {e}")
@@ -1494,7 +1485,7 @@ def capitulo9():
         flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
     ) 
     
-    st.image(cv2.cvtColor(input_image_dense, cv2.COLOR_BGR2RGB), caption='Imagen Uniforme', use_container_width=True)
+    st.image(cv2.cvtColor(input_image_dense, cv2.COLOR_BGR2RGB), caption='Imagen Uniforme')
 
     st.subheader("2. Detector SIFT (Robusto)")
     try:
@@ -1508,7 +1499,7 @@ def capitulo9():
             flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
         ) 
         
-        st.image(cv2.cvtColor(input_image_sift, cv2.COLOR_BGR2RGB), caption='Imagen Robusta', use_container_width=True)
+        st.image(cv2.cvtColor(input_image_sift, cv2.COLOR_BGR2RGB), caption='Imagen Robusta')
 
     except cv2.error:
         st.error("**Error de OpenCV (SIFT):**")
@@ -1773,7 +1764,7 @@ def capitulo10():
                     
                     frame = cv2.resize(frame, None, fx=tracker.scaling_factor, fy=tracker.scaling_factor, interpolation=cv2.INTER_AREA)
                     st.session_state.live_frame = frame 
-                    FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), caption="Cámara en Vivo", use_container_width=True)
+                    FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), caption="Cámara en Vivo")
                     sleep(0.01)
                 
                 if st.session_state.state == "CAMERA_ACTIVE":
@@ -1865,7 +1856,7 @@ def capitulo10():
         cv2.circle(frame, (x_max, y_max), 5, (255, 0, 0), -1)   # Azul
         cv2.circle(frame, (x_max, y_min), 5, (0, 255, 0), -1)   # Verde
         
-        FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), caption="Fotograma Congelado: Ajusta el ROI", use_container_width=True)
+        FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), caption="Fotograma Congelado: Ajusta el ROI")
 
 
     # === C. ESTADO: PROYECCIÓN ACTIVA (TRACKING_ACTIVE) ===
@@ -1884,7 +1875,7 @@ def capitulo10():
         else:
             status_text.error("⚠️ Error de Proyección. El ROI seleccionado puede ser inválido o muy pequeño.")
             
-        FRAME_WINDOW.image(cv2.cvtColor(img_display, cv2.COLOR_BGR2RGB), caption="Realidad Aumentada Proyectada", use_container_width=True)
+        FRAME_WINDOW.image(cv2.cvtColor(img_display, cv2.COLOR_BGR2RGB), caption="Realidad Aumentada Proyectada")
 
 
 def capitulo11():
@@ -2046,7 +2037,7 @@ def capitulo11():
     
     if uploaded_file is not None:
         # Mostrar la imagen subida
-        st.image(uploaded_file, caption='Imagen de Entrada', use_container_width=True)
+        st.image(uploaded_file, caption='Imagen de Entrada')
         st.markdown("---")
         
         if st.button("✨ **Clasificar Imagen**", type="primary"):
@@ -2082,7 +2073,7 @@ def capitulo11():
                     
                     # Crear y mostrar el DataFrame con los porcentajes
                     data = {'Clase': clases, 'Probabilidad (%)': prob_percent}
-                    st.dataframe(data, hide_index=True, use_container_width=True)
+                    st.dataframe(data, hide_index=True)
 
                     # Opcional: Mostrar como barras
                     st.bar_chart(puntuaciones)
@@ -2099,3 +2090,4 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
