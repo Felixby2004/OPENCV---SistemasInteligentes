@@ -573,7 +573,7 @@ def capitulo3():
         
         else:
             # --- Si no hay imagen capturada, intentar usar la cámara local ---
-            cap = cv2.VideoCapture(0)
+            cap = st.camera_input("📸 Toma una foto")
         
             if not cap.isOpened():
                 st.warning("No se puede acceder a la cámara local.")
@@ -2167,6 +2167,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
