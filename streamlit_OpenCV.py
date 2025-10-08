@@ -1249,161 +1249,129 @@ def capitulo7():
         
         st.subheader("🔍 Resultados")
         st.image(cv2.cvtColor(img_segmented, cv2.COLOR_BGR2RGB), caption="Imagen Segmentada")
-        
+
 
 def capitulo8():
-    if 'run_camera_8' not in st.session_state:
-        st.session_state.run_camera_8 = True
-
-    def frame_diff(prev_frame, cur_frame, next_frame): 
-        diff_frames1 = cv2.absdiff(next_frame, cur_frame) 
-        diff_frames2 = cv2.absdiff(cur_frame, prev_frame) 
-        return cv2.bitwise_and(diff_frames1, diff_frames2) 
-
-    def get_frame(cap, scaling_factor):
-        ret, frame = cap.read() 
-        if not ret:
-            return None, False
-            
-        frame = cv2.resize(frame, None, fx=scaling_factor, 
-                            fy=scaling_factor, interpolation=cv2.INTER_AREA) 
-        
-        return frame, True
-
-
     st.markdown(
         """
         <div class="chapter-box">
             <div class="chapter-title">Capítulo 8 - Seguimiento de objetos</div>
             <p>
-                También llamado (Object Tracking), es un proceso crucial en la visión por computadora que se centra en localizar la posición de un objeto de interés en una secuencia de video a lo largo del tiempo, manteniendo su identidad a medida que se mueve o cambia.<br>
-                Aquí estamos aplicando la detección de movimiento con un filtro de grises.
+                También llamado <b>Object Tracking</b>, es un proceso crucial en la visión por computadora que se centra en localizar la posición de un objeto de interés en una secuencia de video a lo largo del tiempo, manteniendo su identidad a medida que se mueve o cambia.<br>
+                Aquí aplicamos detección de movimiento mediante diferencias de fotogramas.
             </p>
         </div>
         """,
         unsafe_allow_html=True
     )
 
-    with st.expander("Objetivo Principal"):
-        st.markdown(
-            """
-            <p>Mantener la identidad del objeto a través de múltiples fotogramas (frames) de video.</p>
-            <ul>
-                <li>
-                    <strong>Propósito</strong>: Simplificar la imagen para que solo se quede con el objeto de interés, separándolo del fondo y de otros elementos.
-                </li>
-            </ul>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    with st.expander("Diferencia clave con Detección"):
-        st.markdown(
-            """
-            <ul>
-                <li>
-                    <strong>Detección</strong>: "¿Dónde está este objeto ahora?" (Procesa cada fotograma de forma independiente).
-                </li>
-                <li>
-                    <strong>Seguimiento</strong>: Responde a la pregunta: "¿Qué objeto en el fotograma anterior corresponde a este objeto en este fotograma?" (Conecta la posición a lo largo del tiempo).
-                </li>
-            </ul>
-            """,
-            unsafe_allow_html=True
-        )
-    
-    # --- Opción de fuente de imagen ---
-    opcion = st.radio("Selecciona una opción:", ["📷 Activar Cámara", "📹 Subir Video"])
+    # --- Funciones internas ---
+    def frame_diff(prev_frame, cur_frame, next_frame):
+        diff1 = cv2.absdiff(next_frame, cur_frame)
+        diff2 = cv2.absdiff(cur_frame, prev_frame)
+        return cv2.bitwise_and(diff1, diff2)
 
-    uploaded_file = None
-    
-    if opcion == "📷 Activar Cámara":
-        scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
-    
-    else:
-        uploaded_file = st.file_uploader("Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
-        if uploaded_file is not None:
-             col_scale, _ = st.columns([1, 1])
-             with col_scale:
-                 scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
-        else:
-            return
+    def get_frame(cap, scaling_factor):
+        ret, frame = cap.read()
+        if not ret:
+            return None, False
+        frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
+        return frame, True
+
+    # --- Selección de fuente ---
+    opcion = st.radio("Selecciona una opción:", ["📷 Usar Cámara", "🎞️ Subir Video"])
 
     st.markdown("---")
-    
-    is_ready = (opcion == "📷 Activar Cámara") or (opcion == "📹 Subir Video" and uploaded_file is not None)
 
-    if is_ready:
-        temp_file_path = None
-        cap = None
-        FRAME_WINDOW_CUR = None
-        FRAME_WINDOW_DIFF = None
+    scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
 
-        source = 0
-        if opcion == "📹 Subir Video" and uploaded_file is not None:
-            try:
-                # Guardar archivo temporalmente
+    # === OPCIÓN 1: Subir Video ===
+    if opcion == "🎞️ Subir Video":
+        uploaded_file = st.file_uploader("🎞️ Subir Video", type=["mp4", "avi", "mov", "mkv"])
+
+        if uploaded_file is not None:
+            with st.spinner("Procesando video..."):
                 tfile = tempfile.NamedTemporaryFile(delete=False)
                 tfile.write(uploaded_file.read())
                 tfile.close()
-                temp_file_path = tfile.name
-                source = temp_file_path
-            except Exception as e:
-                st.error(f"Error al guardar archivo temporal: {e}")
-                return
-        
-        # 2. Inicializar la captura y procesamiento
-        try:
-            img_file = st.camera_input("Toma una foto")
-            if img_file is not None:
-                cap = Image.open(img_file)
-                st.image(cap, caption="Imagen capturada")
-            
-            if not cap.isOpened():
-                st.error(f"No se pudo acceder a la fuente de video ({opcion}). Verifica permisos o el archivo.")
-                return
-            
-            st.markdown("### Fuente Actual (Grises)")
-            FRAME_WINDOW_CUR = st.empty()
-            st.markdown("---")
-            st.markdown("### Resultado de Detección de Movimiento")
-            FRAME_WINDOW_DIFF = st.empty()
-                
-            prev_frame, cur_frame, next_frame = None, None, None
-            
-            # Bucle de procesamiento de fotogramas
-            while cap.isOpened():
-                frame_bgr, ret = get_frame(cap, scaling_factor)
-                
-                if not ret:
-                    break
-                    
-                prev_frame = cur_frame 
-                cur_frame = next_frame
-                next_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
-                
-                if prev_frame is not None and cur_frame is not None:
-                    diff_img = frame_diff(prev_frame, cur_frame, next_frame)
-                    _, diff_img_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
-                    
-                    cur_frame_rgb = cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB)
-                    diff_img_rgb = cv2.cvtColor(diff_img_thresh, cv2.COLOR_GRAY2RGB)
 
-                    FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB")
-                    FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB")
+                cap = cv2.VideoCapture(tfile.name)
 
-        except Exception as e:
-            st.error(f"Ocurrió un error durante el procesamiento de video: {e}")
-            
-        finally:
-            if cap is not None:
+                FRAME_WINDOW_CUR = st.empty()
+                FRAME_WINDOW_DIFF = st.empty()
+
+                prev_frame, cur_frame, next_frame = None, None, None
+
+                while cap.isOpened():
+                    frame_bgr, ret = get_frame(cap, scaling_factor)
+                    if not ret:
+                        break
+
+                    prev_frame = cur_frame
+                    cur_frame = next_frame
+                    next_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+
+                    if prev_frame is not None and cur_frame is not None:
+                        diff_img = frame_diff(prev_frame, cur_frame, next_frame)
+                        _, diff_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
+
+                        FRAME_WINDOW_CUR.image(cur_frame, channels="GRAY", caption="Frame actual")
+                        FRAME_WINDOW_DIFF.image(diff_thresh, channels="GRAY", caption="Movimiento detectado")
+
                 cap.release()
-            
-            if temp_file_path and os.path.exists(temp_file_path):
-                os.unlink(temp_file_path)
+                os.unlink(tfile.name)
 
-    else:
-        st.info("Selecciona la fuente y, si es necesario, sube el archivo para iniciar la detección de movimiento.")
+        else:
+            st.info("Por favor, sube un video para comenzar el análisis.")
+
+    # === OPCIÓN 2: Usar Cámara ===
+    elif opcion == "📷 Usar Cámara":
+        if "camera_frames" not in st.session_state:
+            st.session_state.camera_frames = []
+            st.session_state.recording = False
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🟢 Iniciar Grabación"):
+                st.session_state.camera_frames = []
+                st.session_state.recording = True
+                st.info("Grabando... toma varias fotos con la cámara.")
+        with col2:
+            if st.button("🔴 Finalizar Procesamiento"):
+                st.session_state.recording = False
+
+        img_file = st.camera_input("Toma una foto")
+
+        if img_file is not None and st.session_state.recording:
+            try:
+                pil_img = Image.open(img_file).convert("RGB")
+                frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
+                st.session_state.camera_frames.append(frame)
+                st.success(f"📸 Fotograma {len(st.session_state.camera_frames)} capturado")
+            except Exception:
+                st.warning("No se pudo leer la imagen de la cámara.")
+
+        if not st.session_state.recording and len(st.session_state.camera_frames) >= 3:
+            st.markdown("---")
+            st.markdown("🔍 Resultados")
+            FRAME_WINDOW_CUR = st.empty()
+            FRAME_WINDOW_DIFF = st.empty()
+
+            frames = st.session_state.camera_frames
+            for i in range(2, len(frames)):
+                prev_frame = frames[i - 2]
+                cur_frame = frames[i - 1]
+                next_frame = frames[i]
+
+                diff_img = frame_diff(prev_frame, cur_frame, next_frame)
+                _, diff_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
+
+                FRAME_WINDOW_CUR.image(cur_frame, channels="GRAY", caption=f"Frame {i}")
+                FRAME_WINDOW_DIFF.image(diff_thresh, channels="GRAY", caption="Movimiento Detectado")
+
+            st.success("✅ Procesamiento completado. Puedes volver a grabar si deseas.")
+        elif not st.session_state.recording:
+            st.info("Presiona 'Iniciar Grabación' y toma varias fotos antes de finalizar.")
 
 
 def capitulo9():
@@ -2108,6 +2076,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
