@@ -545,20 +545,23 @@ def capitulo3():
         )
         
         FRAME_WINDOW = st.empty()
-        
-        img_file = st.camera_input("📸 Toma una foto")
+        CAMERA_SLOT = st.empty()  # Aquí pondremos el st.camera_input
+
+        img_file = CAMERA_SLOT.camera_input()
         
         if img_file is not None:
+            # Ocultar el widget de cámara
+            CAMERA_SLOT.empty()  # Borra el st.camera_input del layout
+        
+            # Procesar la imagen
             img = Image.open(img_file)
             frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-        
             cartoon_frame = cartoonize_image(frame, ksize=ksize)
         
             combined = np.hstack([
                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
                 cv2.cvtColor(cartoon_frame, cv2.COLOR_BGR2RGB)
             ])
-        
             FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
         else:
             st.info("📷 Apunta tu cámara y toma una foto para ver el efecto.")
@@ -2133,6 +2136,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
