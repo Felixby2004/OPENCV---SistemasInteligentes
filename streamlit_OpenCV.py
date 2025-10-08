@@ -1423,7 +1423,7 @@ def capitulo9():
         def detect(self, image):
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             keypoints = self.detector.detect(gray, None)
-            return keypointsZ
+            return keypoints
 
     st.markdown(
         """
@@ -2166,6 +2166,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
