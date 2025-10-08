@@ -1367,8 +1367,8 @@ def capitulo8():
                 diff_img = frame_diff(prev_frame, cur_frame, next_frame)
                 _, diff_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
 
-                FRAME_WINDOW_CUR.image(cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB), channels="RGB", use_container_width=True)
-                FRAME_WINDOW_DIFF.image(cv2.cvtColor(diff_thresh, cv2.COLOR_GRAY2RGB), channels="RGB", use_container_width=True)
+                FRAME_WINDOW_CUR.image(cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB), channels="RGB")
+                FRAME_WINDOW_DIFF.image(cv2.cvtColor(diff_thresh, cv2.COLOR_GRAY2RGB), channels="RGB")
 
         cap.release()
     except Exception as e:
@@ -2081,6 +2081,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
