@@ -710,8 +710,6 @@ def capitulo4():
         """,
         unsafe_allow_html=True
     )
-    
-    st.info("Activa la cámara en el cuadro de abajo.")
 
     img_file = st.camera_input("")
     if img_file is not None:
@@ -2167,6 +2165,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
