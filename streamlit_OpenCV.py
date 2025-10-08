@@ -6,6 +6,7 @@ from PIL import Image
 import tempfile
 import os
 import math
+import time
 from time import sleep
 import _pickle as pickle
 from scipy.special import softmax
@@ -647,53 +648,44 @@ def load_resources():
 
 class ARFaceOverlayTransformer(VideoTransformerBase):
     def __init__(self, face_cascade, glasses_img, overlay_func):
-        # Usamos los nombres que recibimos
         self.face_cascade = face_cascade
         self.glasses_img = glasses_img
-        self.overlay_func = overlay_func 
+        self.overlay_func = overlay_func
+
+        self.frame_count = 0
+        self.face_rects = [] # Almacena las últimas caras detectadas
+        self.DETECTION_INTERVAL = 5 # Realizar detección solo cada 5 fotogramas
 
         if self.face_cascade is None or self.glasses_img is None:
              raise RuntimeError("Recursos de RA no disponibles.")
     
     def transform(self, frame):
-        try:
-            # 1. Convertir el frame a un array de NumPy (BGR)
-            frame = frame.to_ndarray(format="bgr")
+        frame = frame.to_ndarray(format="bgr")
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        
+        if self.frame_count % self.DETECTION_INTERVAL == 0:
+            # Ejecuta la detección solo si el contador es múltiplo del intervalo
+            self.face_rects = self.face_cascade.detectMultiScale(
+                gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
+            )
+            self.frame_count = 0 # Resetear el contador después de detectar
+
+        # Incrementar el contador
+        self.frame_count += 1
+        
+        # 2. Superposición (SIEMPRE se ejecuta)
+        for (x, y, w, h) in self.face_rects:
+            # Los cálculos de posición y superposición son los mismos
+            glasses_w = int(w * 1.2)
+            glasses_h = int(h * 0.4)
+            glasses_x = x - int(w * 0.10)
+            glasses_y = y + int(h * 0.25)
             
-            # 2. Convertir a escala de grises para la detección
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
-            # 3. Detectar caras
-            face_rects = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-    
-            # 4. Superponer lentes en cada cara detectada
-            for (x, y, w, h) in face_rects:
-                # Cálculos de posición y tamaño
-                glasses_w = int(w * 1.2)
-                glasses_h = int(h * 0.4)
-                glasses_x = x - int(w * 0.10)
-                glasses_y = y + int(h * 0.25) 
-                
-                # 5. Superponer usando la función mejorada:
-                frame = self.overlay_func(
-                    self.glasses_img, # Lentes (con canal alfa)
-                    frame,            # Frame (fondo)
-                    glasses_x, glasses_y, glasses_w, glasses_h # Posición y tamaño
-                )
-    
-            # 6. Devuelve el frame procesado (NumPy array BGR)
-            return frame
-    
-        except Exception as e:
-            # Si algo falla (ej: error de dimensión en overlay), lo reportamos y devolvemos el frame original
-            # NOTA: En un entorno de producción, podrías querer registrar esto en lugar de st.error.
-            # st.error(f"Error en el procesamiento de video: {e}") 
-            
-            # Necesitamos convertir a NumPy array BGR antes de devolver, por si la excepción ocurre muy temprano
-            if not isinstance(frame, np.ndarray):
-                frame = frame.to_ndarray(format="bgr")
-                
-            return frame
+            frame = self.overlay_func(
+                self.glasses_img, frame, glasses_x, glasses_y, glasses_w, glasses_h
+            )
+
+        return frame
 
 
 def capitulo4():        
@@ -2164,6 +2156,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
