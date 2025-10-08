@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from PIL import Image
 import tempfile
+import av
 import os
 import math
 import time
@@ -694,6 +695,11 @@ class ARFaceOverlayTransformer(VideoTransformerBase):
 
         return frame_bgr
 
+class FaceDetector(VideoTransformerBase):
+    def transform(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+        return detect_faces(img)
+
 
 def capitulo4():        
     face_cascade, eye_cascade, glasses_img = load_resources()
@@ -716,17 +722,15 @@ def capitulo4():
     # Usamos las variables locales face_cascade y glasses_img
     transformer_factory = lambda: ARFaceOverlayTransformer(
         face_cascade=face_cascade,
+        eye_cascade=eye_cascade,
         glasses_img=glasses_img,
-        overlay_func=overlay_image_alpha # overlay_image_alpha es una función global
+        overlay_func=overlay_image_alpha
     )
 
     # 4. Iniciamos el stream
     webrtc_streamer(
-        key="superposicion_ra",
-        video_transformer_factory=transformer_factory,
-        rtc_configuration={
-            "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-        },
+        key="face-detector",
+        video_transformer_factory=FaceDetector,
         media_stream_constraints={"video": True, "audio": False},
     )
 
@@ -2163,6 +2167,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
