@@ -2083,9 +2083,7 @@ def capitulo11():
         return
 
     # --- 2. Interfaz de Subida de Archivo ---
-    uploaded_file = st.file_uploader(
-        "📂 **Sube una imagen** para clasificarla (JPEG, PNG):", type=["png", "jpg", "jpeg"]
-    )
+    uploaded_file = st.file_uploader("📂 Sube una imagen", type=["png","jpg","jpeg"])
     
     if uploaded_file is not None:
         # Abrir la imagen con PIL
@@ -2143,61 +2141,4 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    
