@@ -539,13 +539,13 @@ def capitulo3():
     
     elif opcion == "📷 Usar cámara":
         st.subheader("🔍 Resultados")
-
+    
         ksize = st.select_slider(
             "👀 Tamaño del filtro (ksize)",
             options=[1, 3, 5, 7, 9, 11, 13, 15, 17],
             value=5
         )
-
+    
         col_label_orig, col_label_result = st.columns(2)
         with col_label_orig:
             st.markdown("### 1. Cámara Normal") 
@@ -553,49 +553,24 @@ def capitulo3():
             st.markdown("### 2. Caricatura")
         
         FRAME_WINDOW = st.empty()
-
-        img_file = st.camera_input("📸 Toma una foto")
-
+    
+        img_file = st.camera_input("📸 Toma una foto", key="camera_input_1")  # key único
+    
         if img_file is not None:
-            # --- Procesar imagen tomada desde la cámara del navegador ---
+            # Convertir PIL a formato OpenCV (BGR)
             cap = Image.open(img_file)
             st.image(cap, caption="Imagen capturada", use_container_width=True)
-        
-            # Convertir PIL a formato OpenCV (BGR)
+    
             frame = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
             result = cartoonize_image(frame, ksize=ksize, sketch_mode=True)
-        
+    
             combined = np.hstack([
                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
                 cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
             ])
             st.image(combined, caption="Original y resultado", use_container_width=True)
-        
         else:
-            # --- Si no hay imagen capturada, intentar usar la cámara local ---
-            cap = st.camera_input("📸 Toma una foto")
-        
-            if not cap.isOpened():
-                st.warning("No se puede acceder a la cámara local.")
-            else:
-                FRAME_WINDOW = st.empty()
-        
-                while cap.isOpened():
-                    ret, frame = cap.read()
-                    if not ret:
-                        st.warning("Error leyendo la cámara")
-                        break
-        
-                    frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
-                    result = cartoonize_image(frame, ksize=ksize, sketch_mode=True)
-        
-                    combined = np.hstack([
-                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                        cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-                    ])
-                    FRAME_WINDOW.image(combined, channels="RGB")
-        
-                cap.release()
+            st.info("📷 Toma una foto para ver el efecto de caricatura.")
 
 
 def capitulo4():
@@ -2167,6 +2142,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
