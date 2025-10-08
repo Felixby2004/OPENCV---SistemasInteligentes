@@ -1252,78 +1252,96 @@ def capitulo7():
 
 
 def capitulo8():
-    st.title("🎥 Simulación de grabación con cámara del navegador (modo seguro)")
-
-    if "capturas" not in st.session_state:
-        st.session_state.capturas = []
+    st.title("🎥 Grabación automática con cámara (modo Streamlit Cloud)")
     
-    # Mostrar conteo
-    st.info(f"Capturas tomadas: {len(st.session_state.capturas)}")
+    if "grabando" not in st.session_state:
+        st.session_state.grabando = False
+    if "frames" not in st.session_state:
+        st.session_state.frames = []
+    if "start_time" not in st.session_state:
+        st.session_state.start_time = None
     
-    # Cámara del navegador
-    img = st.camera_input("📸 Toma una foto (hazlo varias veces seguidas)")
+    # --- Control de grabación ---
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        iniciar = st.button("▶️ Iniciar grabación", disabled=st.session_state.grabando)
+    with col2:
+        detener = st.button("⏹️ Detener y procesar", disabled=not st.session_state.grabando)
     
-    # Guardar cada captura si se puede abrir correctamente
-    if img is not None:
-        try:
-            _ = Image.open(img)
-            st.session_state.capturas.append(img)
-            st.success(f"Capturas totales: {len(st.session_state.capturas)}")
-        except UnidentifiedImageError:
-            st.warning("⚠️ No se pudo leer esta imagen. Intenta tomar otra.")
+    # --- Inicia grabación ---
+    if iniciar:
+        st.session_state.grabando = True
+        st.session_state.frames = []
+        st.session_state.start_time = time.time()
+        st.rerun()
     
-    # Botón de procesamiento
-    if st.button("Procesar capturas"):
-        if len(st.session_state.capturas) < 3:
-            st.warning("Toma al menos 3 fotos para generar el video.")
-        else:
-            with st.status("Procesando movimiento...", expanded=True) as status:
-                status.write("Cargando imágenes...")
+    # --- Captura automática mientras grabando ---
+    if st.session_state.grabando:
+        tiempo = time.time() - st.session_state.start_time
+        st.info(f"⏱️ Grabando... {tiempo:.1f}s / 20s")
+        img = st.camera_input("📸 Grabando automáticamente (no toques nada)...", key=str(time.time()))
+        
+        if img is not None:
+            st.session_state.frames.append(img)
     
-                frames = []
-                for i, img_file in enumerate(st.session_state.capturas):
-                    try:
-                        img_pil = Image.open(img_file)
-                        frame = np.array(img_pil)
-                        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                        frames.append(frame)
-                    except Exception as e:
-                        status.write(f"⚠️ Imagen {i} no se pudo abrir: {e}")
+        if tiempo >= 20:
+            st.session_state.grabando = False
+            st.rerun()
     
-                if not frames:
-                    st.error("❌ No se pudieron procesar las imágenes.")
-                else:
-                    status.write("Analizando diferencias de movimiento...")
-                    processed_frames = []
-                    prev_gray = None
-                    for i, frame in enumerate(frames):
-                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                        if prev_gray is None:
-                            prev_gray = gray
-                            continue
-                        diff = cv2.absdiff(prev_gray, gray)
-                        _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
-                        color_diff = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-                        processed_frames.append(color_diff)
-                        prev_gray = gray
-                        status.write(f"✅ Frame {i} procesado")
-                        time.sleep(0.05)
+    # --- Procesamiento cuando se detiene ---
+    if detener and len(st.session_state.frames) > 3:
+        st.session_state.grabando = False
+        with st.status("Procesando movimiento...", expanded=True) as status:
+            frames_rgb = []
+            for i, file in enumerate(st.session_state.frames):
+                try:
+                    image = Image.open(file)
+                    frame = np.array(image)
+                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                    frames_rgb.append(frame)
+                    status.write(f"Frame {i+1} cargado.")
+                except Exception as e:
+                    status.write(f"⚠️ Error en frame {i}: {e}")
     
-                    # Guardar video temporal
-                    temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-                    height, width, _ = frames[0].shape
-                    out = cv2.VideoWriter(temp_video.name, cv2.VideoWriter_fourcc(*'avc1'), 5, (width, height))
-                    for f in processed_frames:
-                        out.write(f)
-                    out.release()
+            # Procesamiento: detección de movimiento simple
+            processed_frames = []
+            prev_gray = None
+            for i, frame in enumerate(frames_rgb):
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                if prev_gray is None:
+                    prev_gray = gray
+                    continue
+                diff = cv2.absdiff(prev_gray, gray)
+                _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+                color_diff = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
+                processed_frames.append(color_diff)
+                prev_gray = gray
+                status.write(f"Procesado frame {i+1}")
     
-                    status.update(label="✅ Procesamiento finalizado", state="complete")
+            # Guardar video temporal
+            if processed_frames:
+                temp_video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
+                height, width, _ = processed_frames[0].shape
+                out = cv2.VideoWriter(temp_video.name, cv2.VideoWriter_fourcc(*'avc1'), 5, (width, height))
+                for frame in processed_frames:
+                    out.write(frame)
+                out.release()
     
-                    st.video(temp_video.name)
-                    st.download_button("⬇️ Descargar video", open(temp_video.name, "rb"), "video_procesado.mp4")
+                status.update(label="✅ Procesamiento completado", state="complete")
+                st.video(temp_video.name)
+                st.download_button("⬇️ Descargar video", open(temp_video.name, "rb"), "movimiento_procesado.mp4")
+                os.unlink(temp_video.name)
+            else:
+                st.warning("⚠️ No se generaron frames procesados.")
     
-                    os.unlink(temp_video.name)
-                    st.session_state.capturas.clear()
+            st.session_state.frames = []
+    
+    elif detener:
+        st.warning("No hay suficientes frames para procesar (toma más capturas primero).")
+    
+    # --- Estado final ---
+    if not st.session_state.grabando and len(st.session_state.frames) == 0:
+        st.info("Presiona 'Iniciar grabación' para comenzar. Dura máximo 20 segundos.")
 
 
 
@@ -2031,6 +2049,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
