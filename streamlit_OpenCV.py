@@ -1252,6 +1252,9 @@ def capitulo7():
 
 
 def capitulo8():
+    if 'run_camera_8' not in st.session_state:
+        st.session_state.run_camera_8 = True
+
     def frame_diff(prev_frame, cur_frame, next_frame): 
         diff_frames1 = cv2.absdiff(next_frame, cur_frame) 
         diff_frames2 = cv2.absdiff(cur_frame, prev_frame) 
@@ -2085,6 +2088,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
