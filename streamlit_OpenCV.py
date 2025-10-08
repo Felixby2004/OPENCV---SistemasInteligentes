@@ -2085,18 +2085,25 @@ def capitulo11():
                     # Este es el formato final que tu clasificador espera para cv2.imread()
                     input_img = cv2.cvtColor(numpy_img_rgb, cv2.COLOR_RGB2BGR)
 
-                    # Parche universal para compatibilidad SIFT
+                    # Parche universal para compatibilidad SIFT / ORB (sin SURF)
                     try:
-                        # Si SIFT está en el módulo principal (versiones nuevas)
-                        sift_test = cv2.SURF_create()
+                        # Versión moderna de SIFT (OpenCV >= 4.4)
+                        sift_test = cv2.SIFT_create
                     except AttributeError:
                         try:
-                            # Si SIFT está en contrib (versiones antiguas)
-                            sift_test = cv2.SURF_create()
+                            # Compatibilidad con versiones antiguas
+                            sift_test = cv2.xfeatures2d.SIFT_create
                         except AttributeError:
-                            # Si no existe, creamos un "mock" que levanta un error claro
+                            # Si SIFT no está disponible, usar ORB como alternativa libre
                             def sift_test():
-                                raise RuntimeError("Tu instalación de OpenCV no tiene SIFT. Instala 'opencv-contrib-python'.")
+                                return cv2.ORB_create()
+                            st.warning("SIFT no disponible — se usará ORB en su lugar.")
+                    
+                    # Inyectar compatibilidad general (solo SIFT, sin SURF)
+                    import types
+                    cv2.SIFT_create = sift_test
+                    if not hasattr(cv2, "xfeatures2d"):
+                        cv2.xfeatures2d = types.SimpleNamespace(SIFT_create=sift_test)
 
                     # Inyectar compatibilidad para ambos namespaces
                     cv2.SURF_create = sift_test
@@ -2142,6 +2149,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
