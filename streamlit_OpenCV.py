@@ -1768,7 +1768,6 @@ def capitulo10():
     st.markdown("---")
     
     # --- POSICIONAMIENTO DE ELEMENTOS GLOBALES ---
-    col_ctrl, col_roi = st.columns([1, 1])
     FRAME_WINDOW = st.empty()
     status_text = st.empty()
     
@@ -1781,7 +1780,6 @@ def capitulo10():
         
         if st.session_state.source_type == "CAMERA":
             # --- LÓGICA DE CÁMARA EN VIVO (Activación Automática) ---
-            
             if st.session_state.state == "INIT":
                 st.session_state.cap = cv2.VideoCapture(0)
                 if st.session_state.cap and st.session_state.cap.isOpened():
@@ -1790,18 +1788,17 @@ def capitulo10():
                     status_text.error("No se pudo acceder a la Webcam (capId=0).")
             
             if st.session_state.state == "CAMERA_ACTIVE":
-                with col_ctrl:
-                    if st.button("📸 1. Tomar Foto (Congelar)", type="primary"):
-                        if st.session_state.live_frame is not None:
-                            # 1. Spinner de espera al tomar la foto
-                            with st.spinner("Procesando... Capturando fotograma"):
-                                st.session_state.first_frame = st.session_state.live_frame.copy()
-                                st.session_state.state = "ROI_SELECTION"
-                                if st.session_state.cap: st.session_state.cap.release()
-                                st.session_state.cap = None 
-                            st.rerun()
-                        else:
-                            status_text.warning("Espera a que el stream de la cámara se inicialice.")
+                if st.button("📸 1. Tomar Foto (Congelar)", type="primary"):
+                    if st.session_state.live_frame is not None:
+                        # 1. Spinner de espera al tomar la foto
+                        with st.spinner("Procesando... Capturando fotograma"):
+                            st.session_state.first_frame = st.session_state.live_frame.copy()
+                            st.session_state.state = "ROI_SELECTION"
+                            if st.session_state.cap: st.session_state.cap.release()
+                            st.session_state.cap = None 
+                        st.rerun()
+                    else:
+                        status_text.warning("Espera a que el stream de la cámara se inicialice.")
 
                 status_text.info("Cámara activa automáticamente. Presiona 'Tomar Foto' sobre el objeto plano.")
                 
@@ -1834,8 +1831,7 @@ def capitulo10():
 
         elif st.session_state.source_type == "IMAGE":
             # --- LÓGICA DE IMAGEN: SUBIDA ---
-            with col_ctrl:
-                uploaded_file = st.file_uploader("📂 1. Sube una imagen (JPEG, PNG) con un objeto plano.", type=["png", "jpg", "jpeg"])
+            uploaded_file = st.file_uploader("📂 Sube una imagen con un objeto plano.", type=["png", "jpg", "jpeg"])
                 
             if uploaded_file is not None:
                 # 2. Spinner de espera al subir el archivo
@@ -1858,54 +1854,51 @@ def capitulo10():
 
         status_text.info("Paso 2: Ajusta el ROI (rectángulo) sobre el objeto plano.")
         
-        # --- REINICIAR FOTO/FUENTE ARRIBA (en la columna de control) ---
-        with col_ctrl:
-            if st.button("⏪ Reiniciar Foto/Cambiar Fuente", key='reset_foto'):
-                st.session_state.first_frame = None
-                st.session_state.state = "INIT"
-                st.rerun()
+        if st.button("⏪ Reiniciar Foto/Cambiar Fuente", key='reset_foto'):
+            st.session_state.first_frame = None
+            st.session_state.state = "INIT"
+            st.rerun()
         
-        with col_roi:
-            # --- TÍTULO DE DEFINICIÓN DEL ROI ARRIBA (en la columna de ROI) ---
-            st.subheader("🛠️ Definición del ROI (Manual)")
-            
-            # --- Sliders en 2 columnas para el diseño compacto ---
-            col_x_sliders, col_y_sliders = st.columns(2)
-            
-            # --- LÍMITES y VALORES PREDETERMINADOS ---
-            max_coord_x = w - 1
-            max_coord_y = h - 1
-            
-            default_x_min = int(w * 0.3)
-            default_y_min = int(h * 0.2)
-            default_x_max = int(w * 0.7)
-            default_y_max = int(h * 0.8)
+        # --- TÍTULO DE DEFINICIÓN DEL ROI ARRIBA (en la columna de ROI) ---
+        st.subheader("🛠️ Definición del ROI (Manual)")
+        
+        # --- Sliders en 2 columnas para el diseño compacto ---
+        col_x_sliders, col_y_sliders = st.columns(2)
+        
+        # --- LÍMITES y VALORES PREDETERMINADOS ---
+        max_coord_x = w - 1
+        max_coord_y = h - 1
+        
+        default_x_min = int(w * 0.3)
+        default_y_min = int(h * 0.2)
+        default_x_max = int(w * 0.7)
+        default_y_max = int(h * 0.8)
 
-            with col_x_sliders:
-                x_min = st.slider("🟥 X Mínimo (Lado Izquierdo)", 0, max_coord_x, default_x_min, key='roi_x_min')
-                y_min = st.slider("🟩 Y Mínimo (Lado Superior)", 0, max_coord_y, default_y_min, key='roi_y_min')
+        with col_x_sliders:
+            x_min = st.slider("🟥 X Mínimo (Lado Izquierdo)", 0, max_coord_x, default_x_min, key='roi_x_min')
+            y_min = st.slider("🟩 Y Mínimo (Lado Superior)", 0, max_coord_y, default_y_min, key='roi_y_min')
 
-            with col_y_sliders:
-                x_max = st.slider("🟦 X Máximo (Lado Derecho)", x_min + 1, max_coord_x, default_x_max, key='roi_x_max')
-                y_max = st.slider("🟨 Y Máximo (Lado Inferior)", y_min + 1, max_coord_y, default_y_max, key='roi_y_max')
-            
-            # --- CONVERSIÓN DE (min, max) A (x, y, w, h) ---
-            x = x_min
-            y = y_min
-            rect_w = x_max - x_min
-            rect_h = y_max - y_min
-            
-            current_rect = (x, y, rect_w, rect_h)
-            
-            if st.button("🎯 3. CONFIRMAR ROI e INICIAR PROYECCIÓN", type="primary"):
-                if rect_w > 10 and rect_h > 10:
-                    # 3. Spinner de espera al iniciar la proyección
-                    with st.spinner("Procesando... Calculando pose 3D"):
-                        tracker.add_target(frame, current_rect)
-                        st.session_state.state = "TRACKING_ACTIVE"
-                    st.rerun()
-                else:
-                    status_text.error("El área del ROI debe ser mayor a 10x10 píxeles.")
+        with col_y_sliders:
+            x_max = st.slider("🟦 X Máximo (Lado Derecho)", x_min + 1, max_coord_x, default_x_max, key='roi_x_max')
+            y_max = st.slider("🟨 Y Máximo (Lado Inferior)", y_min + 1, max_coord_y, default_y_max, key='roi_y_max')
+        
+        # --- CONVERSIÓN DE (min, max) A (x, y, w, h) ---
+        x = x_min
+        y = y_min
+        rect_w = x_max - x_min
+        rect_h = y_max - y_min
+        
+        current_rect = (x, y, rect_w, rect_h)
+        
+        if st.button("🎯 3. CONFIRMAR ROI e INICIAR PROYECCIÓN", type="primary"):
+            if rect_w > 10 and rect_h > 10:
+                # 3. Spinner de espera al iniciar la proyección
+                with st.spinner("Procesando... Calculando pose 3D"):
+                    tracker.add_target(frame, current_rect)
+                    st.session_state.state = "TRACKING_ACTIVE"
+                st.rerun()
+            else:
+                status_text.error("El área del ROI debe ser mayor a 10x10 píxeles.")
 
 
         # Dibuja el rectángulo de selección (Visualización)
@@ -2152,6 +2145,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
