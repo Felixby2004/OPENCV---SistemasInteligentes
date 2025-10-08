@@ -1912,6 +1912,7 @@ def capitulo10():
 
 
 def capitulo11():
+    st.write("Versión de OpenCV:", cv2.__version__)
     try:
         import create_features as cf
     except ImportError:
@@ -2142,6 +2143,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
