@@ -538,8 +538,6 @@ def capitulo3():
             st.error("No se encontró 'road.jpg'")
     
     elif opcion == "📷 Usar cámara":
-        st.subheader("🔍 Cámara en vivo estilo Caricatura")
-        
         ksize = st.select_slider(
             "👀 Tamaño del filtro (ksize)",
             options=[1,3,5,7,9,11,13,15,17],
@@ -548,20 +546,35 @@ def capitulo3():
         
         FRAME_WINDOW = st.empty()
         
-        img_file = st.camera_input("📸 Cámara en vivo", key="live_camera")  # cada frame es un nuevo img_file
+        # Botón para iniciar la cámara
+        if st.button("▶️ Iniciar cámara"):
+            cap = cv2.VideoCapture(0)
         
-        if img_file is not None:
-            img = Image.open(img_file)
-            frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-            result = cartoonize_image(frame, ksize=ksize)
-            
-            combined = np.hstack([
-                cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-            ])
-            FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
-        else:
-            st.info("📷 Apunta tu cámara y toma una foto para ver el efecto.")
+            if not cap.isOpened():
+                st.error("⚠️ No se pudo abrir la cámara.")
+            else:
+                try:
+                    while True:
+                        ret, frame = cap.read()
+                        if not ret:
+                            st.warning("⚠️ No se pudo capturar el frame.")
+                            break
+        
+                        # Aplicar caricaturización
+                        cartoon_frame = cartoonize_image(frame, ksize=ksize)
+        
+                        # Combinar original y caricatura lado a lado
+                        combined = np.hstack([
+                            cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                            cv2.cvtColor(cartoon_frame, cv2.COLOR_BGR2RGB)
+                        ])
+        
+                        FRAME_WINDOW.image(combined, channels="RGB", use_column_width=True)
+        
+                except st.script_runner.StopException:
+                    pass
+                finally:
+                    cap.release()
 
 
 def capitulo4():
@@ -2133,6 +2146,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
