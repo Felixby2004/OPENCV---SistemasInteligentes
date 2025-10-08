@@ -929,7 +929,7 @@ def capitulo6():
             return img_orig, "Rectángulo inválido o demasiado pequeño."
             
         # Número de seams a remover es el ancho del ROI más un margen
-        num_seams = w + 10 
+        num_seams = min(w, img.shape[1] // 8)
         
         # 1. REMOVER SEAMS (Encogimiento de la imagen)
         for i in range(num_seams): 
@@ -1074,6 +1074,11 @@ def capitulo6():
         rect_roi = (x, y, w, h) # Formato (x, y, w, h) necesario para remove_object
 
         with st.spinner('Procesando...'):
+            scale_percent = 50  # Reducir al 50%
+            new_width = int(img.shape[1] * scale_percent / 100)
+            new_height = int(img.shape[0] * scale_percent / 100)
+            img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
+    
             img_output, error = remove_object(img_orig.copy(), rect_roi)
 
         if error:
@@ -2144,6 +2149,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
