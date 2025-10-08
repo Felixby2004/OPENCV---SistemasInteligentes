@@ -31,15 +31,6 @@ opciones = [
     'Capítulo 11 - Machine Learning por una Red Neuronal Artificial',
 ]
 
-# Usar el selectbox para actualizar el estado de la página
-selected_chapter = st.sidebar.selectbox(
-    " ", 
-    opciones,
-    key="chapter_selector",
-    # Cuando el valor cambia, actualiza el estado de la sesión
-    on_change=lambda: st.session_state.__setitem__('page', st.session_state.chapter_selector)
-)
-
 
 if 'page' not in st.session_state:
     st.session_state.page = opciones[0] # Inicializa en 'Portada'
@@ -49,6 +40,15 @@ if 'page' not in st.session_state:
 
 st.sidebar.title("Índice")
 st.sidebar.write("Selecciona un encabezado:")
+
+# Usar el selectbox para actualizar el estado de la página
+selected_chapter = st.sidebar.selectbox(
+    " ", 
+    opciones,
+    key="chapter_selector",
+    # Cuando el valor cambia, actualiza el estado de la sesión
+    on_change=lambda: st.session_state.__setitem__('page', st.session_state.chapter_selector)
+)
 
 # --- CSS para la portada
 def estilos():
@@ -2102,6 +2102,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
