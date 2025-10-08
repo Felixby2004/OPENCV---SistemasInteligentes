@@ -2029,7 +2029,7 @@ def capitulo11():
                 <br>
             </p>
             <div class="chapter-title"></div>
-            <b>ACLARACIÓN: Esta red neuronal artificial fue entrenada con imágenes de animales como perros, gatos y loros. Cualquier otro tipo de imagen no justificará un mal análisis.</b>
+            <b>ACLARACIÓN: Esta red neuronal artificial fue entrenada con imágenes de animales como perros, gatos y loros. Cualquier otro tipo de imagen justificará un mal análisis.</b>
         </div>
         """,
         unsafe_allow_html=True
@@ -2169,6 +2169,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
