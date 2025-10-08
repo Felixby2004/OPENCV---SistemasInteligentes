@@ -1787,6 +1787,7 @@ def capitulo10():
                     frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                     st.session_state.first_frame = frame
                     st.session_state.state = "ROI_SELECTION"
+                    st.rerun()
                 except Exception:
                     st.warning("No se pudo abrir la imagen. Intenta nuevamente o usa una imagen subida.")
 
@@ -2107,6 +2108,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
