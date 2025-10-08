@@ -740,6 +740,9 @@ def capitulo5():
         """
         <div class="chapter-box">
             <div class="chapter-title">Capítulo 5 - Extraer características de una imagen</div>
+            <p>Apartado útil para el entendimiento de la máquina en descubrir la forma de un objeto solo viendo la imagen. Lo hace a travez de métodos Con NMS y Sin NMS.<br>
+            Pondrá puntos verdes para identificar el objeto.
+            </p>
         </div>
         """,
         unsafe_allow_html=True
@@ -2149,6 +2152,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
