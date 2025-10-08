@@ -572,41 +572,48 @@ global face_cascade_global, glasses_img_global
 face_cascade_global, eye_cascade_global, glasses_img_global = None, None, None    
 
 def overlay_image_alpha(lentes, frame, x, y, w, h):
-    # Redimensionar la imagen de los lentes al tamaño de la zona deseada
+    # 1. Redimensionar la imagen de los lentes al tamaño deseado (sin recorte)
     lentes_resized = cv2.resize(lentes, (w, h), interpolation=cv2.INTER_AREA)
 
-    # Coordenadas de la Región de Interés (ROI) en el fotograma
-    y1, y2 = y, y + h
-    x1, x2 = x, x + w
-
-    # Verificar que las coordenadas no excedan los límites del fotograma
-    if y1 < 0: lentes_resized = lentes_resized[abs(y1):, :] ; y1 = 0
-    if x1 < 0: lentes_resized = lentes_resized[:, abs(x1):] ; x1 = 0
-    if y2 > frame.shape[0]: lentes_resized = lentes_resized[:-(y2 - frame.shape[0]), :] ; y2 = frame.shape[0]
-    if x2 > frame.shape[1]: lentes_resized = lentes_resized[:, :-(x2 - frame.shape[1])] ; x2 = frame.shape[1]
-
-    # Recalcular alto y ancho después del recorte por límites
-    h_new, w_new = lentes_resized.shape[:2]
+    # 2. Definir los límites de la Región de Interés (ROI) en el FRAME
+    # Usamos max/min para asegurar que la ROI esté dentro de los límites del frame
+    y1 = max(0, y)
+    y2 = min(frame.shape[0], y + h)
+    x1 = max(0, x)
+    x2 = min(frame.shape[1], x + w)
     
-    # Si la imagen de lentes no tiene canal alfa, no podemos superponer con transparencia
-    if lentes_resized.shape[2] < 4:
-        frame[y1:y2, x1:x2] = lentes_resized
+    # Si la ROI es inválida (fuera de la pantalla), salimos
+    if x1 >= x2 or y1 >= y2:
         return frame
-
-    # Extraer el canal alfa (transparencia) y su inverso
-    alpha_s = lentes_resized[:, :, 3] / 255.0
-    alpha_l = 1.0 - alpha_s
-
-    # Tomar solo los canales BGR de los lentes
-    lentes_bgr = lentes_resized[:, :, :3]
+        
+    # 3. Definir los límites de la ROI en la IMAGEN DE LENTES
+    # Si la imagen se salió por la izquierda/arriba, recortamos la imagen de lentes
+    lentes_y1 = y1 - y
+    lentes_x1 = x1 - x
     
-    # Crear la ROI del fotograma para la superposición
+    # Si la imagen se salió por la derecha/abajo, recortamos la imagen de lentes
+    lentes_y2 = y2 - y
+    lentes_x2 = x2 - x
+
+    # 4. Obtener las porciones de imagen correctas (asegurando dimensiones iguales)
+    lentes_bgr = lentes_resized[lentes_y1:lentes_y2, lentes_x1:lentes_x2, :3]
+    alpha_s = lentes_resized[lentes_y1:lentes_y2, lentes_x1:lentes_x2, 3] / 255.0
+    
+    # Crear la ROI del fotograma para la superposición (solo si tiene 3 canales)
     roi = frame[y1:y2, x1:x2]
 
-    # Superposición: (Lentes * Alfa) + (Fondo * (1 - Alfa))
+    # 5. Si la imagen de lentes no tiene canal alfa, solo hacemos una superposición simple.
+    if lentes_resized.shape[2] < 4:
+         frame[y1:y2, x1:x2] = lentes_resized
+         return frame
+         
+    # 6. Calcular alpha_l (debe tener las mismas dimensiones que alpha_s)
+    alpha_l = 1.0 - alpha_s
+
+    # 7. Superposición: (Lentes * Alfa) + (Fondo * (1 - Alfa))
     for c in range(0, 3):
         frame[y1:y2, x1:x2, c] = (alpha_s * lentes_bgr[:, :, c] +
-                                alpha_l * roi[:, :, c])
+                                  alpha_l * roi[:, :, c])
     return frame
 
 @st.cache_resource
@@ -649,22 +656,44 @@ class ARFaceOverlayTransformer(VideoTransformerBase):
              raise RuntimeError("Recursos de RA no disponibles.")
     
     def transform(self, frame):
-        # **Tu código de transform va aquí, sin cambios en la lógica.**
-        frame = frame.to_ndarray(format="bgr")
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
-        face_rects = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-        
-        for (x, y, w, h) in face_rects:
-            glasses_w = int(w * 1.2)
-            glasses_h = int(h * 0.4)
-            glasses_x = x - int(w * 0.10)
-            glasses_y = y + int(h * 0.25)
+        try:
+            # 1. Convertir el frame a un array de NumPy (BGR)
+            frame = frame.to_ndarray(format="bgr")
             
-            # Usamos self.overlay_func que es la función que pasamos en el __init__
-            frame = self.overlay_func(self.glasses_img, frame, glasses_x, glasses_y, glasses_w, glasses_h)
+            # 2. Convertir a escala de grises para la detección
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+            # 3. Detectar caras
+            face_rects = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+            # 4. Superponer lentes en cada cara detectada
+            for (x, y, w, h) in face_rects:
+                # Cálculos de posición y tamaño
+                glasses_w = int(w * 1.2)
+                glasses_h = int(h * 0.4)
+                glasses_x = x - int(w * 0.10)
+                glasses_y = y + int(h * 0.25) 
+                
+                # 5. Superponer usando la función mejorada:
+                frame = self.overlay_func(
+                    self.glasses_img, # Lentes (con canal alfa)
+                    frame,            # Frame (fondo)
+                    glasses_x, glasses_y, glasses_w, glasses_h # Posición y tamaño
+                )
+    
+            # 6. Devuelve el frame procesado (NumPy array BGR)
+            return frame
+    
+        except Exception as e:
+            # Si algo falla (ej: error de dimensión en overlay), lo reportamos y devolvemos el frame original
+            # NOTA: En un entorno de producción, podrías querer registrar esto en lugar de st.error.
+            # st.error(f"Error en el procesamiento de video: {e}") 
             
-        return frame
+            # Necesitamos convertir a NumPy array BGR antes de devolver, por si la excepción ocurre muy temprano
+            if not isinstance(frame, np.ndarray):
+                frame = frame.to_ndarray(format="bgr")
+                
+            return frame
 
 
 def capitulo4():        
@@ -2135,6 +2164,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
