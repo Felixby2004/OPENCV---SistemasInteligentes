@@ -2026,6 +2026,8 @@ def capitulo11():
             <div class="chapter-title">Capítulo 11 - Machine Learning por una Red Neuronal Artificial</div>
             <p>
                 Es un subconjunto de la Inteligencia Artificial que se inspira en la estructura y funcionamiento del cerebro humano. Su objetivo es enseñar a una computadora a aprender patrones y tomar decisiones basándose en grandes cantidades de datos, en lugar de ser programada explícitamente para cada tarea.
+                <br>
+                <h2>ACLARACIÓN: Este red neuronal artificial funciona para animales que son perros, gatos y loros. Cualquier otro tipo de imagen no justificará un mal análisis.</h2>
             </p>
         </div>
         """,
@@ -2166,6 +2168,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
