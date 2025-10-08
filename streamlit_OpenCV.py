@@ -568,6 +568,7 @@ def capitulo3():
 
 
 def capitulo4():
+    global face_cascade_global, glasses_img_global
     face_cascade_global, eye_cascade_global, glasses_img_global = None, None, None
     try:
         # Llama a tu función de carga de recursos UNA VEZ
@@ -636,8 +637,6 @@ def capitulo4():
         """,
         unsafe_allow_html=True
     )
-    
-    global face_cascade_global, glasses_img_global # Usamos los recursos globales
     
     # Comprobación de si los recursos se cargaron
     if face_cascade_global is None or glasses_img_global is None:
@@ -2101,6 +2100,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
