@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 from PIL import Image
 import tempfile
-import av
 import os
 import math
 import time
@@ -2167,6 +2166,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
