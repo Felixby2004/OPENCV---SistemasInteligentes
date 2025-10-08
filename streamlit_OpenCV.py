@@ -1307,7 +1307,6 @@ def capitulo8():
 
         for i in range(2, len(frames)):
             next_frame = cv2.cvtColor(frames[i], cv2.COLOR_BGR2GRAY)
-
             diff_img = frame_diff(prev_frame, cur_frame, next_frame)
             _, diff_img_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
 
@@ -1315,7 +1314,7 @@ def capitulo8():
             FRAME_WINDOW_DIFF.image(diff_img_thresh, channels="GRAY", caption="Movimiento Detectado")
 
             prev_frame, cur_frame = cur_frame, next_frame
-            sleep(0.2)
+            sleep(0.3)
 
     if opcion == "📹 Subir Video":
         uploaded_file = st.file_uploader("Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
@@ -1350,36 +1349,32 @@ def capitulo8():
     else:
         scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
 
-        if "recording" not in st.session_state:
-            st.session_state.recording = False
         if "frames" not in st.session_state:
             st.session_state.frames = []
 
-        if not st.session_state.recording:
-            if st.button("▶️ Iniciar Grabación"):
-                st.session_state.recording = True
-                st.session_state.frames = []
-                st.rerun()
-        else:
-            st.info("Grabando... toma fotos automáticamente o manualmente.")
-            img = st.camera_input("Captura automática de frames")
+        st.write("📸 Captura varias imágenes para simular un video.")
 
-            if img is not None:
-                try:
-                    frame = np.array(Image.open(img))
-                    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-                    st.session_state.frames.append(frame)
-                    st.success(f"Frame {len(st.session_state.frames)} capturado.")
-                except Exception as e:
-                    st.warning(f"No se pudo procesar la imagen: {e}")
+        img = st.camera_input("Toma una foto")
 
-            if st.button("⏹ Detener Grabación y Procesar"):
-                st.session_state.recording = False
-                if len(st.session_state.frames) > 2:
-                    st.info("Procesando frames grabados...")
-                    procesar_frames(st.session_state.frames, scaling_factor)
-                else:
-                    st.warning("No se capturaron suficientes frames.")
+        if img is not None:
+            try:
+                frame = np.array(Image.open(img))
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                st.session_state.frames.append(frame)
+                st.success(f"✅ Frame {len(st.session_state.frames)} capturado correctamente.")
+            except Exception as e:
+                st.warning(f"No se pudo procesar la imagen: {e}")
+
+        if st.button("▶️ Procesar grabación simulada"):
+            if len(st.session_state.frames) > 2:
+                st.info("Procesando frames capturados...")
+                procesar_frames(st.session_state.frames, scaling_factor)
+            else:
+                st.warning("Debes capturar al menos 3 imágenes antes de procesar.")
+
+        if st.button("🗑️ Reiniciar capturas"):
+            st.session_state.frames = []
+            st.info("Las capturas fueron reiniciadas.")
 
 
 def capitulo9():
@@ -2084,6 +2079,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
