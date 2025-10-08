@@ -650,48 +650,41 @@ class ARFaceOverlayTransformer(VideoTransformerBase):
         self.face_cascade = face_cascade
         self.glasses_img = glasses_img
         self.overlay_func = overlay_func
-
         self.frame_count = 0
-        self.face_rects = [] # Almacena las últimas caras detectadas
-        self.DETECTION_INTERVAL = 5 # Realizar detección solo cada 5 fotogramas
-
+        self.face_rects = []
+        self.DETECTION_INTERVAL = 5
         if self.face_cascade is None or self.glasses_img is None:
-             raise RuntimeError("Recursos de RA no disponibles.")
-    
-    def transform(self, frame):
-        frame_bgr = frame.to_ndarray(format="bgr")
-        RESIZE_SCALE = 0.5 
+            raise RuntimeError("Recursos de RA no disponibles.")
+
+    def recv(self, frame):
+        # Convertir frame a ndarray BGR
+        frame_bgr = frame.to_ndarray(format="bgr24")
+        RESIZE_SCALE = 0.5
         
         if self.frame_count % self.DETECTION_INTERVAL == 0:
-            
-            # Solo si usas RESIZE_SCALE: Redimensionar antes de la detección
             small_frame = cv2.resize(frame_bgr, (0, 0), fx=RESIZE_SCALE, fy=RESIZE_SCALE)
             gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-
-            # Detectar en el frame pequeño
             face_rects_small = self.face_cascade.detectMultiScale(
                 gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30)
             )
-            
-            # Escalar las coordenadas detectadas al tamaño original (CRÍTICO)
             self.face_rects = (face_rects_small / RESIZE_SCALE).astype(int)
             self.frame_count = 0
-            
+
         self.frame_count += 1
-        
-        # 2. Superposición (SIEMPRE se ejecuta)
+
+        # Superponer lentes
         for (x, y, w, h) in self.face_rects:
-            # Los cálculos de posición y superposición son los mismos
             glasses_w = int(w * 1.2)
             glasses_h = int(h * 0.4)
             glasses_x = x - int(w * 0.10)
             glasses_y = y + int(h * 0.25)
-            
             frame_bgr = self.overlay_func(
-                self.glasses_img, frame, glasses_x, glasses_y, glasses_w, glasses_h
+                self.glasses_img, frame_bgr, glasses_x, glasses_y, glasses_w, glasses_h
             )
 
-        return frame_bgr
+        # Retornar frame convertido a VideoFrame
+        from av import VideoFrame
+        return VideoFrame.from_ndarray(frame_bgr, format="bgr24")
 
 class FaceDetector(VideoTransformerBase):
     def transform(self, frame):
@@ -2164,6 +2157,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
