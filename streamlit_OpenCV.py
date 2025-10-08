@@ -1741,7 +1741,7 @@ def capitulo10():
         st.session_state.cap = None
         st.session_state.live_frame = None 
         st.session_state.first_frame = None
-        st.session_state.state = "INIT"
+        st.session_state.state = "IMAGE"
         st.session_state.source_type = None
         st.session_state.initialized = True
     
@@ -2145,6 +2145,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
