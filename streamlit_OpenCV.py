@@ -1779,25 +1779,18 @@ def capitulo10():
     if st.session_state.state == "INIT" or st.session_state.state == "CAMERA_ACTIVE":
         
         if st.session_state.source_type == "CAMERA":
-            img_file = st.camera_input("")
+            st.info("Activa tu cámara y toma una foto del objeto plano.")
+            img_file = st.camera_input("📸 Toma una foto")
+        
             if img_file is not None:
                 try:
                     pil_img = Image.open(img_file).convert("RGB")
                     frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                     st.session_state.first_frame = frame
                     st.session_state.state = "ROI_SELECTION"
-                except Exception as e:
-                    st.error(f"No se pudo procesar la foto: {e}")
-                    return
-    
-            if st.session_state.state == "ROI_SELECTION" and st.session_state.first_frame is not None:
-                st.markdown("---")
-                st.image(
-                    cv2.cvtColor(st.session_state.first_frame, cv2.COLOR_BGR2RGB),
-                    caption="Imagen capturada",
-                )
-            
-           # st.session_state.state = "INIT"
+                    st.success("✅ Imagen capturada correctamente.")
+                except Exception:
+                    st.warning("⚠️ No se pudo abrir la imagen. Intenta nuevamente o usa una imagen subida.")
 
 
         elif st.session_state.source_type == "IMAGE":
@@ -2116,6 +2109,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
