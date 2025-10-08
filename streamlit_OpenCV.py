@@ -554,30 +554,48 @@ def capitulo3():
         
         FRAME_WINDOW = st.empty()
 
-        img_file = st.camera_input("Toma una foto")
+        img_file = st.camera_input("📸 Toma una foto")
+
         if img_file is not None:
+            # --- Procesar imagen tomada desde la cámara del navegador ---
             cap = Image.open(img_file)
             st.image(cap, caption="Imagen capturada", use_container_width=True)
         
-        if not cap.isOpened():
-            st.warning("No se puede acceder a la cámara")
-        else:  
-            while cap.isOpened():
-                ret, frame = cap.read()
-                if not ret:
-                    st.warning("Error leyendo la cámara")
-                    break
-
-                frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
-                result = cartoonize_image(frame, ksize=ksize, sketch_mode=True)
-
-                # Mostrar lado a lado (Original + Resultado)
-                combined = np.hstack([
-                    cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                    cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
-                ])
-                FRAME_WINDOW.image(combined)
-            cap.release()
+            # Convertir PIL a formato OpenCV (BGR)
+            frame = cv2.cvtColor(np.array(cap), cv2.COLOR_RGB2BGR)
+            result = cartoonize_image(frame, ksize=ksize, sketch_mode=True)
+        
+            combined = np.hstack([
+                cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+            ])
+            st.image(combined, caption="Original y resultado", use_container_width=True)
+        
+        else:
+            # --- Si no hay imagen capturada, intentar usar la cámara local ---
+            cap = cv2.VideoCapture(0)
+        
+            if not cap.isOpened():
+                st.warning("No se puede acceder a la cámara local.")
+            else:
+                FRAME_WINDOW = st.empty()
+        
+                while cap.isOpened():
+                    ret, frame = cap.read()
+                    if not ret:
+                        st.warning("Error leyendo la cámara")
+                        break
+        
+                    frame = cv2.resize(frame, None, fx=0.5, fy=0.5)
+                    result = cartoonize_image(frame, ksize=ksize, sketch_mode=True)
+        
+                    combined = np.hstack([
+                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                        cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+                    ])
+                    FRAME_WINDOW.image(combined, channels="RGB")
+        
+                cap.release()
 
 
 def capitulo4():
@@ -2149,6 +2167,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
