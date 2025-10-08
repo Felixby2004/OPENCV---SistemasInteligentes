@@ -1844,7 +1844,7 @@ def capitulo10():
                     st.session_state.state = "ROI_SELECTION"
                 st.rerun()
             else:
-                FRAME_WINDOW.markdown("### Esperando que subas una imagen.")
+                FRAME_WINDOW.markdown("")
 
 
     # === B. ESTADO: SELECCIÓN DE ROI (ROI_SELECTION) ===
@@ -2145,6 +2145,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
