@@ -572,6 +572,44 @@ def capitulo4():
     global face_cascade_global, glasses_img_global
     face_cascade_global, eye_cascade_global, glasses_img_global = None, None, None
 
+    def overlay_image_alpha(lentes, frame, x, y, w, h):
+        # Redimensionar la imagen de los lentes al tamaño de la zona deseada
+        lentes_resized = cv2.resize(lentes, (w, h), interpolation=cv2.INTER_AREA)
+
+        # Coordenadas de la Región de Interés (ROI) en el fotograma
+        y1, y2 = y, y + h
+        x1, x2 = x, x + w
+
+        # Verificar que las coordenadas no excedan los límites del fotograma
+        if y1 < 0: lentes_resized = lentes_resized[abs(y1):, :] ; y1 = 0
+        if x1 < 0: lentes_resized = lentes_resized[:, abs(x1):] ; x1 = 0
+        if y2 > frame.shape[0]: lentes_resized = lentes_resized[:-(y2 - frame.shape[0]), :] ; y2 = frame.shape[0]
+        if x2 > frame.shape[1]: lentes_resized = lentes_resized[:, :-(x2 - frame.shape[1])] ; x2 = frame.shape[1]
+
+        # Recalcular alto y ancho después del recorte por límites
+        h_new, w_new = lentes_resized.shape[:2]
+        
+        # Si la imagen de lentes no tiene canal alfa, no podemos superponer con transparencia
+        if lentes_resized.shape[2] < 4:
+            frame[y1:y2, x1:x2] = lentes_resized
+            return frame
+
+        # Extraer el canal alfa (transparencia) y su inverso
+        alpha_s = lentes_resized[:, :, 3] / 255.0
+        alpha_l = 1.0 - alpha_s
+
+        # Tomar solo los canales BGR de los lentes
+        lentes_bgr = lentes_resized[:, :, :3]
+        
+        # Crear la ROI del fotograma para la superposición
+        roi = frame[y1:y2, x1:x2]
+
+        # Superposición: (Lentes * Alfa) + (Fondo * (1 - Alfa))
+        for c in range(0, 3):
+            frame[y1:y2, x1:x2, c] = (alpha_s * lentes_bgr[:, :, c] +
+                                    alpha_l * roi[:, :, c])
+        return frame
+
     def load_resources():
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
@@ -600,15 +638,15 @@ def capitulo4():
     # --- CLASE DE PROCESAMIENTO DE VIDEO EN VIVO (WEB RTC) ---
     # =========================================================
     
-    class ARFaceOverlayTransformer(VideoTransformerBase):
+    class ARFaceTransformer(VideoTransformerBase):
         """
         Procesa cada fotograma usando la detección de rostro y la función global 
         de superposición con canal alfa.
         """
-        def __init__(self, face_cascade, glasses_img, overlay_func):
+        def __init__(self, face_cascade, glasses_img, _func):
             self.face_cascade = face_cascade
             self.glasses_img = glasses_img
-            self.overlay_func = overlay_func # La función global overlay_image_alpha
+            self._func = _func # La función global _image_alpha
     
             if self.face_cascade is None or self.glasses_img is None:
                 # Aquí manejamos el error si load_resources falló
@@ -2119,6 +2157,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
