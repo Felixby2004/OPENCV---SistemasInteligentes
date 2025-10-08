@@ -10,6 +10,11 @@ from time import sleep
 import _pickle as pickle
 from scipy.special import softmax
 
+st.set_page_config(
+    page_title="Detección de Rostros",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
 opciones = [
     'Portada',
@@ -35,8 +40,6 @@ selected_chapter = st.sidebar.selectbox(
     on_change=lambda: st.session_state.__setitem__('page', st.session_state.chapter_selector)
 )
 
-# --- Configuración Inicial ---
-st.set_page_config(layout="centered", initial_sidebar_state="collapsed")
 
 if 'page' not in st.session_state:
     st.session_state.page = opciones[0] # Inicializa en 'Portada'
@@ -350,7 +353,7 @@ def capitulo1():
             else:
                 img_compuesta[i, j] = 0 # Borde negro
 
-    st.image(img_compuesta, caption=f"Imagen Modificada")
+    st.image(img_compuesta, caption="Imagen Modificada")
 
 
 def capitulo2():
@@ -443,12 +446,12 @@ def capitulo2():
 
     col1, col2 = st.columns(2)
     with col1:
-        caption_erosion = f"Imagen con Erosión"
+        caption_erosion = "Imagen con Erosión"
         st.markdown("**1. Erosión**", unsafe_allow_html=True)
         st.image(img_erosion, caption=caption_erosion)
 
     with col2:
-        caption_dilation = f"Imagen con Dilatación"
+        caption_dilation = "Imagen con Dilatación"
         st.markdown("**2. Dilatación**", unsafe_allow_html=True)
         st.image(img_dilation, caption=caption_dilation)
 
@@ -2099,5 +2102,6 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
