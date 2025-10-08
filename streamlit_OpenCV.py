@@ -1274,7 +1274,8 @@ def capitulo8():
             <div class="chapter-title">Capítulo 8 - Seguimiento de objetos</div>
             <p>
                 También llamado (Object Tracking), es un proceso crucial en la visión por computadora que se centra en localizar la posición de un objeto de interés en una secuencia de video a lo largo del tiempo, manteniendo su identidad a medida que se mueve o cambia.<br>
-                Aquí estamos aplicando la detección de movimiento con un filtro de grises.<br>
+                Aquí estamos aplicando la detección de movimiento con un filtro de grises.
+                <div class="chapter-title"></div>
                 <b>ACLARACIÓN: DEPENDIENDO DEL TAMAÑO DEL VIDEO Y LA ESCALA A APLICAR SE DEMORARÁ O SE PODRIA VER LENTO, POR ELLO ABAJO DE LAS 2 VENTANAS RESULTADO (ESCALA GRISES Y RESULTADOS) PUEDE DESCARGAR EL VIDEO PROCESADO.</b>
             </p>
         </div>
@@ -2095,6 +2096,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
