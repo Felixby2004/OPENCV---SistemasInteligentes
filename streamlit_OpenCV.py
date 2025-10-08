@@ -1252,42 +1252,21 @@ def capitulo7():
 
 
 def capitulo8():
-    def procesar_frames(frames, scaling_factor):
-        st.info("🔄 Procesando movimiento... Esto puede tardar unos segundos.")
-        prev_frame = None
-        frames_out = []
+    def frame_diff(prev_frame, cur_frame, next_frame): 
+        diff_frames1 = cv2.absdiff(next_frame, cur_frame) 
+        diff_frames2 = cv2.absdiff(cur_frame, prev_frame) 
+        return cv2.bitwise_and(diff_frames1, diff_frames2) 
 
-        for frame in frames:
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    
-            if prev_frame is None:
-                prev_frame = gray
-                continue
-    
-            diff = cv2.absdiff(prev_frame, gray)
-            _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
-            diff_color = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-            frames_out.append(diff_color)
-    
-            prev_frame = gray
-    
-        if not frames_out:
-            st.warning("No se detectaron suficientes cambios entre los fotogramas.")
-            return
-    
-        h, w, _ = frames_out[0].shape
-        temp_out = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
-        out = cv2.VideoWriter(temp_out.name, cv2.VideoWriter_fourcc(*'avc1'), 10, (w, h))
-    
-        for f in frames_out:
-            out.write(f)
-        out.release()
-    
-        st.video(temp_out.name)
-        st.download_button("⬇️ Descargar video procesado", open(temp_out.name, "rb"), "movimiento_detectado.mp4")
-        os.unlink(temp_out.name)
-    
+    def get_frame(cap, scaling_factor):
+        ret, frame = cap.read() 
+        if not ret:
+            return None, False
+            
+        frame = cv2.resize(frame, None, fx=scaling_factor, 
+                            fy=scaling_factor, interpolation=cv2.INTER_AREA) 
+        
+        return frame, True
+
     st.markdown(
         """
         <div class="chapter-box">
@@ -1329,31 +1308,78 @@ def capitulo8():
             unsafe_allow_html=True
         )
 
-    uploaded_file = st.file_uploader("📽️ Subir un video", type=["mp4", "avi", "mov", "mkv"])
-    if uploaded_file is not None:
-        try:
-            scaling_factor = st.slider("📏 Factor de Escala", 0.2, 1.0, 0.5, 0.1)
-            tfile = tempfile.NamedTemporaryFile(delete=False)
-            tfile.write(uploaded_file.read())
-            tfile.close()
+    uploaded_file = None
+    uploaded_file = st.file_uploader("Sube un archivo de video (mp4, avi, mov, mkv)", type=["mp4", "avi", "mov", "mkv"])
+        if uploaded_file is not None:
+             col_scale, _ = st.columns([1, 1])
+             with col_scale:
+                 scaling_factor = st.slider("📏 Factor de Escala de Imagen", 0.2, 1.0, 0.5, 0.1)
+        else:
+            return
+            
+    st.markdown("---")
 
-            cap = cv2.VideoCapture(tfile.name)
-            frames = []
+    temp_file_path = None
+    FRAME_WINDOW_CUR = None
+    FRAME_WINDOW_DIFF = None
+    source = 0
 
-            while True:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                frame = cv2.resize(frame, None, fx=scaling_factor, fy=scaling_factor, interpolation=cv2.INTER_AREA)
-                frames.append(frame)
+    try:
+        # Guardar archivo temporalmente
+        tfile = tempfile.NamedTemporaryFile(delete=False)
+        tfile.write(uploaded_file.read())
+        tfile.close()
+        temp_file_path = tfile.name
+        source = temp_file_path
+    except Exception as e:
+        st.error(f"Error al guardar archivo temporal: {e}")
+        return
 
+    # 2. Inicializar la captura y procesamiento
+    try:
+        cap = cv2.VideoCapture(source)
+        if not cap.isOpened():
+            st.error(f"No se pudo acceder a la fuente de video ({opcion}). Verifica permisos o el archivo.")
+            return
+        
+        st.markdown("### Fuente Actual (Grises)")
+        FRAME_WINDOW_CUR = st.empty()
+        st.markdown("---")
+        st.markdown("### Resultado de Detección de Movimiento")
+        FRAME_WINDOW_DIFF = st.empty()
+            
+        prev_frame, cur_frame, next_frame = None, None, None
+        
+        # Bucle de procesamiento de fotogramas
+        while cap.isOpened():
+            frame_bgr, ret = get_frame(cap, scaling_factor)
+            
+            if not ret:
+                break
+                
+            prev_frame = cur_frame 
+            cur_frame = next_frame
+            next_frame = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2GRAY)
+            
+            if prev_frame is not None and cur_frame is not None:
+                diff_img = frame_diff(prev_frame, cur_frame, next_frame)
+                _, diff_img_thresh = cv2.threshold(diff_img, 25, 255, cv2.THRESH_BINARY)
+                
+                cur_frame_rgb = cv2.cvtColor(cur_frame, cv2.COLOR_GRAY2RGB)
+                diff_img_rgb = cv2.cvtColor(diff_img_thresh, cv2.COLOR_GRAY2RGB)
+
+                FRAME_WINDOW_CUR.image(cur_frame_rgb, channels="RGB", use_container_width=True)
+                FRAME_WINDOW_DIFF.image(diff_img_rgb, channels="RGB", use_container_width=True)
+
+    except Exception as e:
+        st.error(f"Ocurrió un error durante el procesamiento de video: {e}")
+        
+    finally:
+        if cap is not None:
             cap.release()
-            procesar_frames(frames, scaling_factor)
-
-        except Exception as e:
-            st.error(f"Ocurrió un error procesando el video: {e}")
-        finally:
-            os.unlink(tfile.name)
+        
+        if temp_file_path and os.path.exists(temp_file_path):
+            os.unlink(temp_file_path)
 
 
 
@@ -2059,6 +2085,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
