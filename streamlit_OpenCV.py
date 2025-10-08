@@ -610,22 +610,50 @@ def capitulo4():
                                     alpha_l * roi[:, :, c])
         return frame
 
+    @st.cache_resource
     def load_resources():
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+        # --- 1. Rutas de Archivos Locales (Subidos a GitHub) ---
+        FACE_CASCADE_PATH = 'haarcascade_frontalface_alt.xml' 
+        # Usamos el archivo ALT que está subido.
         
-        # Cargar la imagen de los lentes (debe ser PNG con canal alfa/transparencia)
+        # Ruta de los lentes
+        GLASSES_PATH = 'sunglasses.png' 
+        
+        # Como 'haarcascade_eye.xml' no está subido, usamos el PATH interno
+        # (¡Pero esto es lo que falla! La mejor práctica es subirlo también).
+        EYE_CASCADE_PATH = cv2.data.haarcascades + 'haarcascade_eye.xml'
+    
+        # --- 2. Carga y Verificación ---
+        
         try:
-            # Asegúrate de tener 'glasses.png' en el mismo directorio.
-            glasses_img = cv2.imread('sunglasses.png', cv2.IMREAD_UNCHANGED)
-            if glasses_img is None or face_cascade.empty() or eye_cascade.empty():
-                st.error("Error: Asegúrate de que 'sunglasses.png' y los archivos 'haarcascade' estén en la ruta correcta.")
-                return None, None, None
-        except Exception as e:
-            st.error(f"Error al cargar recursos: {e}")
-            return None, None, None
+            # Carga de las cascadas de rostro (ruta local) y ojos (ruta de OpenCV)
+            face_cascade = cv2.CascadeClassifier(FACE_CASCADE_PATH)
+            eye_cascade = cv2.CascadeClassifier(EYE_CASCADE_PATH) 
             
-        return face_cascade, eye_cascade, glasses_img
+            # Carga de la imagen de lentes (ruta local)
+            glasses_img = cv2.imread(GLASSES_PATH, cv2.IMREAD_UNCHANGED)
+    
+            # --- 3. Verificación de Errores Críticos ---
+    
+            if glasses_img is None:
+                # st.error detendrá la ejecución
+                st.error(f"FATAL: No se pudo cargar la imagen de lentes. Revisa que '{GLASSES_PATH}' esté en la raíz.")
+                return None, None, None
+    
+            if face_cascade.empty():
+                st.error(f"FATAL: No se pudo cargar el clasificador de rostro. Asegúrate de que '{FACE_CASCADE_PATH}' esté en la raíz y no esté corrupto.")
+                return None, None, None
+    
+            if eye_cascade.empty():
+                # Advertencia de un error no fatal (puedes decidir si detiene la app)
+                st.warning("ADVERTENCIA: No se pudo cargar el archivo 'haarcascade_eye.xml'. La detección de ojos podría fallar.")
+                # Ojo: Si la detección de ojos es CRÍTICA, usa st.error y retorna None
+            
+            return face_cascade, eye_cascade, glasses_img
+            
+        except Exception as e:
+            st.error(f"Error general durante la carga de recursos: {e}")
+            return None, None, None
         
     try:
         # Llama a tu función de carga de recursos UNA VEZ
@@ -2156,6 +2184,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
