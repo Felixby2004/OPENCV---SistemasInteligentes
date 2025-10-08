@@ -687,9 +687,12 @@ class ARFaceOverlayTransformer(VideoTransformerBase):
         return VideoFrame.from_ndarray(frame_bgr, format="bgr24")
 
 class FaceDetector(VideoTransformerBase):
-    def transform(self, frame):
+    def recv(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        return detect_faces(img)
+        result = detect_faces(img)
+        
+        from av import VideoFrame
+        return VideoFrame.from_ndarray(result, format="bgr24")
 
 
 def capitulo4():        
@@ -2157,6 +2160,7 @@ def capitulo11():
 # --- Lógica Principal ---
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
+
 
 
 
