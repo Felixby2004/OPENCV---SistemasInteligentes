@@ -57,7 +57,6 @@ selected_chapter = st.sidebar.selectbox(
 
 # --- CSS para la portada
 def estilos():
-    """Aplica estilos CSS con fondo de gradiente morado, sidebar sólido, y acentos morados/ámbar."""
     st.markdown("""
         <style>
         [data-testid="stSidebar"] {
@@ -137,7 +136,6 @@ def estilos():
             border-top: 3px solid #a4508b;
         }
                 
-
         .streamlit-expanderHeader {
             /* Fondo del encabezado (Green Teal Oscuro, #008080 es un buen contraste) */
             background-color: #008080; 
@@ -548,6 +546,12 @@ def capitulo3():
             options=[1,3,5,7,9,11,13,15,17],
             value=5
         )
+
+        col_label_orig, col_label_result = st.columns(2)
+        with col_label_orig:
+            st.markdown("### 1. Cámara Normal") 
+        with col_label_result:
+            st.markdown("### 2. Caricatura")
         
         FRAME_WINDOW = st.empty()
         CAMERA_SLOT = st.empty()  # Aquí pondremos el st.camera_input
@@ -2096,6 +2100,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
