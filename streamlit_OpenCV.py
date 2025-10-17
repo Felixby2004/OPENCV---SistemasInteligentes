@@ -560,12 +560,6 @@ def capitulo3():
             img = Image.open(img_file)
             frame = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
             cartoon_frame = cartoonize_image(frame, ksize=ksize)
-
-            col_label_orig, col_label_result = st.columns(2)
-            with col_label_orig:
-                st.markdown("### 1. Cámara Normal") 
-            with col_label_result:
-                st.markdown("### 2. Caricatura")
         
             combined = np.hstack([
                 cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
@@ -2100,6 +2094,7 @@ def capitulo11():
 if st.session_state.page in opciones:
     mostrarContenido(st.session_state.page)
     
+
 
 
 
